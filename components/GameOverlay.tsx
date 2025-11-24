@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameStatus, LevelConfig } from '../types';
-import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike } from 'lucide-react';
+import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, ChevronRight } from 'lucide-react';
 import { GAME_CONFIG, LEVELS } from '../constants';
 
 interface GameOverlayProps {
@@ -30,6 +30,16 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
   
   // Helper to format time
   const formatTime = (h: number, m: number) => `${h}:${m < 10 ? '0'+m : m}`;
+
+  // Helper to get theme colors
+  const getThemeColors = (id: string) => {
+      switch(id) {
+          case 'EASY': return { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'text-emerald-500' };
+          case 'NORMAL': return { text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-500' };
+          case 'HARD': return { text: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', icon: 'text-rose-500' };
+          default: return { text: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200', icon: 'text-slate-500' };
+      }
+  };
 
   if (status === GameStatus.PLAYING) {
     return (
@@ -75,42 +85,111 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
 
   if (status === GameStatus.START) {
     return (
-      <div className="absolute inset-0 bg-pink-50/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar">
-        <div className="mb-4 animate-bounce">
-            <div className="relative inline-block">
-                <Bike size={60} className="text-sky-500 mx-auto" />
-                <div className="absolute -bottom-2 -right-6 bg-rose-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm -rotate-6">
-                    全勤奖!
+      <div className="absolute inset-0 bg-gradient-to-b from-pink-50 to-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar">
+        
+        {/* Logo Section */}
+        <div className="mb-6 mt-4 relative flex-shrink-0">
+            <div className="absolute inset-0 bg-sky-400/20 rounded-full blur-xl animate-pulse"></div>
+            <div className="relative bg-white p-4 rounded-3xl shadow-xl ring-4 ring-white/50 transform hover:scale-105 transition-transform duration-300">
+                <Bike size={64} className="text-sky-500" />
+                <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md border-2 border-white animate-bounce">
+                    HOT!
                 </div>
             </div>
         </div>
-        <h1 className="text-2xl font-black mb-1 text-slate-800 tracking-tight">
-          汪汪早八大冒险
+
+        <h1 className="text-3xl font-black mb-1 text-slate-800 tracking-tight text-center drop-shadow-sm flex-shrink-0">
+          汪汪早八<span className="text-sky-500">大冒险</span>
         </h1>
-        <p className="text-xs text-slate-500 mb-6 font-medium">请选择今日通勤难度</p>
         
-        <div className="w-full max-w-xs space-y-3">
-          {LEVELS.map((level) => (
+        {/* Info Tags Group */}
+        <div className="flex flex-col items-center gap-2 mb-8 flex-shrink-0">
+            <p className="text-xs text-slate-500 font-medium flex items-center gap-1 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                <Zap size={12} className="text-amber-500 fill-amber-500"/> 
+                目标: 8:30 前打卡保住全勤奖
+            </p>
+            
+            {/* NEW Warning Tag */}
+            <p className="text-xs text-rose-600 font-bold flex items-center gap-1 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 animate-pulse">
+                <AlertTriangle size={12} className="text-rose-500"/> 
+                警报: 务必小心路上的偷手机贼！
+            </p>
+        </div>
+        
+        {/* Level Selection */}
+        <div className="w-full max-w-xs flex flex-col gap-6 mb-8 flex-shrink-0">
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1 -mb-2">选择今日通勤姿势</div>
+          
+          {LEVELS.map((level, index) => {
+             const theme = getThemeColors(level.id);
+             return (
              <button 
                 key={level.id}
                 onClick={() => onStart(level)}
-                className="w-full group relative bg-white border-2 border-slate-100 hover:border-transparent hover:ring-2 hover:ring-offset-2 hover:ring-emerald-400 rounded-xl p-4 shadow-sm hover:shadow-lg transition-all duration-200 text-left"
+                className="w-full group relative bg-white rounded-2xl p-1 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-visible flex-shrink-0"
              >
-                <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-10 bg-gradient-to-r ${level.colorTheme}`}></div>
-                <div className="flex justify-between items-center mb-1">
-                    <span className="font-black text-lg text-slate-800">{level.name}</span>
-                    <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-500">
-                        {formatTime(level.startHour, level.startMinute)} 出发
-                    </span>
+                {/* Special Tag for Easy Mode */}
+                {index === 0 && (
+                    <div className="absolute -top-3 left-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-10">
+                        新手推荐 ✨
+                    </div>
+                )}
+                 {index === 2 && (
+                    <div className="absolute -top-3 right-4 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-10 animate-pulse">
+                        挑战极限 🔥
+                    </div>
+                )}
+
+                <div className={`relative w-full rounded-xl p-4 overflow-hidden border group-active:scale-[0.98] transition-transform ${theme.bg} ${theme.border}`}>
+                    {/* Background Gradient Accent */}
+                    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${level.colorTheme} opacity-10 rounded-full blur-2xl -mr-8 -mt-8 transition-opacity group-hover:opacity-20`}></div>
+                    
+                    <div className="flex justify-between items-start mb-2 relative z-10">
+                        <div>
+                            <div className="font-black text-lg text-slate-800 flex items-center gap-2">
+                                {level.name}
+                            </div>
+                            <div className="text-xs font-mono text-slate-500 mt-0.5 flex items-center gap-1">
+                                <Clock size={10} /> {formatTime(level.startHour, level.startMinute)} 出发
+                            </div>
+                        </div>
+                        
+                        {/* Play Button - Always Colored now */}
+                        <div className={`p-2 rounded-full bg-white shadow-sm group-hover:shadow-md transition-all ${theme.icon}`}>
+                            <Play size={20} fill="currentColor" className="ml-0.5"/>
+                        </div>
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed text-left relative z-10">
+                        {level.description}
+                    </p>
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed">{level.description}</p>
              </button>
-          ))}
+             );
+          })}
         </div>
 
-        <div className="mt-6 text-[10px] text-slate-400 flex gap-4">
-             <span className="flex items-center gap-1"><Smartphone size={10}/> 收集手机</span>
-             <span className="flex items-center gap-1"><AlertTriangle size={10}/> 躲避小偷</span>
+        {/* Footer Info */}
+        <div className="mt-auto mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 w-full max-w-xs shadow-sm flex-shrink-0">
+             <div className="flex justify-around text-[10px] text-slate-500 font-bold">
+                 <div className="flex flex-col items-center gap-1">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                        <Smartphone size={14} />
+                    </div>
+                    <span>捡手机</span>
+                 </div>
+                 <div className="flex flex-col items-center gap-1">
+                    <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                        <AlertTriangle size={14} />
+                    </div>
+                    <span>躲小偷</span>
+                 </div>
+                 <div className="flex flex-col items-center gap-1">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <Star size={14} />
+                    </div>
+                    <span>拿全勤</span>
+                 </div>
+             </div>
         </div>
       </div>
     );

@@ -298,6 +298,12 @@ const App: React.FC = () => {
                     }, 1000);
                     return nextEntities.filter(e => e.id !== entity.id);
                 } else {
+                    // Update: Explicitly set phones to 0 for UI correct display
+                    setPlayer(p => {
+                        const np = { ...p, phoneCount: 0 };
+                        playerRef.current = np;
+                        return np;
+                    });
                     setDeathReason("汪汪唯一的手机被小偷偷走啦！没法打卡，痛失手机！");
                     setStatus(GameStatus.GAME_OVER);
                     statusRef.current = GameStatus.GAME_OVER;
@@ -362,10 +368,12 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-screen bg-pink-50 flex justify-center overflow-hidden touch-none">
+    // Changed bg to neutral-900 for better letterboxing contrast on desktop
+    <div className="relative w-full h-screen bg-neutral-900 flex justify-center items-center overflow-hidden touch-none">
       <div 
         ref={containerRef}
-        className="relative w-full max-w-md h-full bg-slate-200 shadow-2xl overflow-hidden ring-4 ring-white/50 touch-none"
+        // Optimized for 20:9 aspect ratio on desktop (md+), full size on mobile
+        className="relative h-full w-full md:w-auto md:aspect-[9/20] bg-slate-200 shadow-2xl overflow-hidden ring-4 ring-white/10 touch-none"
       >
         <Road 
             speed={player.speedMultiplier * (currentLevel ? (currentLevel.baseSpeed / 1.5) : 1)} 
@@ -393,7 +401,7 @@ const App: React.FC = () => {
 
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50">
-               Ver 2.1.1 Follow Touch
+               Ver 3.1.0 20:9 Ratio
             </div>
         )}
       </div>
