@@ -402,7 +402,7 @@ const App: React.FC = () => {
 
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50">
-               Ver 3.2.0 Auto Aspect & Fullscreen
+               Ver 3.3.1 More Dynamic Fun
             </div>
         )}
       </div>

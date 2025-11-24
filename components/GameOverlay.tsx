@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { GameStatus, LevelConfig } from '../types';
-import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, Maximize, Minimize } from 'lucide-react';
+import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap } from 'lucide-react';
 import { GAME_CONFIG, LEVELS } from '../constants';
 
 interface GameOverlayProps {
@@ -20,29 +20,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
   status, score, distance, onStart, onRestart, causeOfDeath, gameTimeStr, phoneCount, currentLevel
 }) => {
   
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Check fullscreen status on mount and changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.log(`Error attempting to enable fullscreen: ${err.message}`);
-      });
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
-  };
-
   // Progress Bar Calculation
   const winDistance = currentLevel ? currentLevel.winDistance : GAME_CONFIG.WIN_DISTANCE; 
   const progress = Math.min(100, (distance / winDistance) * 100);
@@ -108,21 +85,26 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
 
   if (status === GameStatus.START) {
     return (
-      <div className="absolute inset-0 bg-gradient-to-b from-pink-50 to-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar">
+      // Updated Background: Morning Sky Gradient
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
         
-        {/* Fullscreen Toggle - Top Left */}
-        <button 
-            onClick={toggleFullscreen}
-            className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm border border-slate-200 text-slate-600 hover:bg-white hover:text-sky-500 transition-colors"
-            aria-label="Toggle Fullscreen"
-        >
-            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-        </button>
+        {/* --- Dynamic Background Elements (Decorations) --- */}
+        {/* Top Left - Large Soft Blob */}
+        <div className="absolute top-[-10%] left-[-20%] w-64 h-64 bg-white/50 rounded-full blur-3xl animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>
+        
+        {/* Top Right - Yellow Sun Glow */}
+        <div className="absolute top-[15%] right-[-10%] w-40 h-40 bg-yellow-200/40 rounded-full blur-2xl animate-[bounce_5s_infinite] delay-700 pointer-events-none"></div>
+        
+        {/* Bottom Left - Pink Accent */}
+        <div className="absolute bottom-[15%] left-[5%] w-32 h-32 bg-pink-300/30 rounded-full blur-xl animate-[pulse_3s_ease-in-out_infinite] pointer-events-none"></div>
+        
+        {/* Center - Subtle Blue Drift */}
+        <div className="absolute top-[40%] left-[30%] w-48 h-48 bg-sky-300/10 rounded-full blur-2xl animate-[ping_4s_cubic-bezier(0,0,0.2,1)_infinite] pointer-events-none"></div>
 
         {/* Logo Section */}
-        <div className="mb-6 mt-8 relative flex-shrink-0">
-            <div className="absolute inset-0 bg-sky-400/20 rounded-full blur-xl animate-pulse"></div>
-            <div className="relative bg-white p-4 rounded-3xl shadow-xl ring-4 ring-white/50 transform hover:scale-105 transition-transform duration-300">
+        <div className="mb-6 mt-8 relative flex-shrink-0 z-10">
+            <div className="absolute inset-0 bg-white/60 rounded-full blur-xl animate-pulse"></div>
+            <div className="relative bg-white p-4 rounded-3xl shadow-xl ring-4 ring-white/60 transform hover:scale-105 transition-transform duration-300">
                 <Bike size={64} className="text-sky-500" />
                 <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md border-2 border-white animate-bounce">
                     HOT!
@@ -130,27 +112,27 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             </div>
         </div>
 
-        <h1 className="text-3xl font-black mb-1 text-slate-800 tracking-tight text-center drop-shadow-sm flex-shrink-0">
-          汪汪早八<span className="text-sky-500">大冒险</span>
+        <h1 className="text-3xl font-black mb-1 text-slate-800 tracking-tight text-center drop-shadow-sm flex-shrink-0 z-10">
+          汪汪早八<span className="text-sky-600">大冒险</span>
         </h1>
         
         {/* Info Tags Group */}
-        <div className="flex flex-col items-center gap-2 mb-8 flex-shrink-0">
-            <p className="text-xs text-slate-500 font-medium flex items-center gap-1 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+        <div className="flex flex-col items-center gap-2 mb-8 flex-shrink-0 z-10">
+            <p className="text-xs text-slate-600 font-medium flex items-center gap-1 bg-white/60 px-3 py-1 rounded-full border border-white/50 backdrop-blur-sm shadow-sm">
                 <Zap size={12} className="text-amber-500 fill-amber-500"/> 
                 目标: 8:30 前打卡保住全勤奖
             </p>
             
             {/* Warning Tag */}
-            <p className="text-xs text-rose-600 font-bold flex items-center gap-1 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 animate-pulse">
+            <p className="text-xs text-rose-600 font-bold flex items-center gap-1 bg-rose-50/90 px-3 py-1 rounded-full border border-rose-200 shadow-sm animate-pulse">
                 <AlertTriangle size={12} className="text-rose-500"/> 
                 警报: 务必小心路上的偷手机贼！
             </p>
         </div>
         
         {/* Level Selection */}
-        <div className="w-full max-w-xs flex flex-col gap-6 mb-8 flex-shrink-0">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1 -mb-2">选择今日通勤姿势</div>
+        <div className="w-full max-w-xs flex flex-col gap-5 mb-8 flex-shrink-0 z-10">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1 -mb-1">选择今日通勤姿势</div>
           
           {LEVELS.map((level, index) => {
              const theme = getThemeColors(level.id);
@@ -158,16 +140,16 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
              <button 
                 key={level.id}
                 onClick={() => onStart(level)}
-                className="w-full group relative bg-white rounded-2xl p-1 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-visible flex-shrink-0"
+                className="w-full group relative bg-white/90 backdrop-blur-sm rounded-2xl p-1 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-visible flex-shrink-0"
              >
                 {/* Special Tag for Easy Mode */}
                 {index === 0 && (
-                    <div className="absolute -top-3 left-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-10">
+                    <div className="absolute -top-2.5 left-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-20">
                         新手推荐 ✨
                     </div>
                 )}
                  {index === 2 && (
-                    <div className="absolute -top-3 right-4 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-10 animate-pulse">
+                    <div className="absolute -top-2.5 right-4 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-20 animate-pulse">
                         挑战极限 🔥
                     </div>
                 )}
@@ -201,22 +183,22 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         </div>
 
         {/* Footer Info */}
-        <div className="mt-auto mb-8 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 w-full max-w-xs shadow-sm flex-shrink-0">
-             <div className="flex justify-around text-[10px] text-slate-500 font-bold">
+        <div className="mt-auto mb-4 bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/50 w-full max-w-xs shadow-sm flex-shrink-0 z-10">
+             <div className="flex justify-around text-[10px] text-slate-600 font-bold">
                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
                         <Smartphone size={14} />
                     </div>
                     <span>捡手机</span>
                  </div>
                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shadow-sm">
                         <AlertTriangle size={14} />
                     </div>
                     <span>躲小偷</span>
                  </div>
                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
                         <Star size={14} />
                     </div>
                     <span>拿全勤</span>
