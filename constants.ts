@@ -13,6 +13,7 @@ export const GAME_CONFIG = {
   END_MINUTE: 30,
   PLAYER_WIDTH: 10,  
   PLAYER_HEIGHT: 10, 
+  WIN_DISTANCE: 300,
 };
 
 // --- Level Definitions ---

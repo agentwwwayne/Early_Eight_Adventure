@@ -69,6 +69,7 @@ const App: React.FC = () => {
     if (statusRef.current !== GameStatus.PLAYING) return;
 
     const now = Date.now();
+    // Double check cooldown here, though event listener also checks it for smoother sliding
     if (now - lastInputTimeRef.current < GAME_CONFIG.INPUT_COOLDOWN_MS) {
         return; 
     }
@@ -100,6 +101,7 @@ const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     
+    // --- Continuous Touch Sliding Logic ---
     let touchStartX = 0;
     let touchStartY = 0;
     
@@ -107,30 +109,61 @@ const App: React.FC = () => {
         touchStartX = e.touches[0].clientX; 
         touchStartY = e.touches[0].clientY;
     };
-    
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndX = e.changedTouches[0].clientX;
-      const touchEndY = e.changedTouches[0].clientY;
-      
-      const diffX = touchStartX - touchEndX;
-      const diffY = touchStartY - touchEndY;
 
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-          if (diffX > 30) handleInput('LEFT');
-          if (diffX < -30) handleInput('RIGHT');
-      } else {
-          if (diffY > 30) handleInput('UP');
-          if (diffY < -30) handleInput('DOWN');
-      }
+    const handleTouchMove = (e: TouchEvent) => {
+        // Prevent default browser scrolling behavior to ensure game control
+        if (e.cancelable) e.preventDefault();
+
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        
+        // Calculate distance from the last anchor point
+        const diffX = currentX - touchStartX;
+        const diffY = currentY - touchStartY;
+        
+        const swipeThreshold = 30; // Pixels to move one step
+
+        // Pre-check cooldown to allow "buffering" of movement distance
+        // If we are in cooldown, we DON'T trigger and we DON'T reset the anchor.
+        // This means the distance accumulates until cooldown is over.
+        if (Date.now() - lastInputTimeRef.current < GAME_CONFIG.INPUT_COOLDOWN_MS) {
+            return;
+        }
+
+        // Determine dominant direction
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            // Horizontal
+            if (Math.abs(diffX) > swipeThreshold) {
+                if (diffX > 0) handleInput('RIGHT');
+                else handleInput('LEFT');
+                
+                // Reset anchor to current position for continuous sliding
+                touchStartX = currentX;
+                touchStartY = currentY;
+            }
+        } else {
+            // Vertical
+            if (Math.abs(diffY) > swipeThreshold) {
+                if (diffY > 0) handleInput('DOWN');
+                else handleInput('UP');
+
+                // Reset anchor
+                touchStartX = currentX;
+                touchStartY = currentY;
+            }
+        }
     };
-
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
+    
+    // We don't need handleTouchEnd for continuous sliding logic
+    
+    // Use non-passive listener to allow preventDefault
+    window.addEventListener('touchstart', handleTouchStart, { passive: false });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
     };
   }, [handleInput]);
 
@@ -398,7 +431,7 @@ const App: React.FC = () => {
         
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50">
-               Ver 2.0.0 Level System
+               Ver 2.1.0 Continuous Touch
             </div>
         )}
       </div>
