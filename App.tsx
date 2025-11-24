@@ -368,12 +368,13 @@ const App: React.FC = () => {
   };
 
   return (
-    // Changed bg to neutral-900 for better letterboxing contrast on desktop
+    // BG set to neutral-900 for letterboxing effect on large screens
     <div className="relative w-full h-screen bg-neutral-900 flex justify-center items-center overflow-hidden touch-none">
       <div 
         ref={containerRef}
-        // Optimized for 20:9 aspect ratio on desktop (md+), full size on mobile
-        className="relative h-full w-full md:w-auto md:aspect-[9/20] bg-slate-200 shadow-2xl overflow-hidden ring-4 ring-white/10 touch-none"
+        // MD: Limit max width to resemble a phone, but allow height to fill freely up to 95vh for "auto aspect"
+        // Mobile: w-full h-full
+        className="relative w-full h-full md:w-auto md:max-w-[450px] md:h-[95vh] md:rounded-3xl md:border-[8px] md:border-neutral-800 bg-slate-200 shadow-2xl overflow-hidden touch-none"
       >
         <Road 
             speed={player.speedMultiplier * (currentLevel ? (currentLevel.baseSpeed / 1.5) : 1)} 
@@ -401,7 +402,7 @@ const App: React.FC = () => {
 
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50">
-               Ver 3.1.0 20:9 Ratio
+               Ver 3.2.0 Auto Aspect & Fullscreen
             </div>
         )}
       </div>

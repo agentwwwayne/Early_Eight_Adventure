@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameStatus, LevelConfig } from '../types';
-import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, ChevronRight } from 'lucide-react';
+import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, Maximize, Minimize } from 'lucide-react';
 import { GAME_CONFIG, LEVELS } from '../constants';
 
 interface GameOverlayProps {
@@ -20,8 +20,31 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
   status, score, distance, onStart, onRestart, causeOfDeath, gameTimeStr, phoneCount, currentLevel
 }) => {
   
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Check fullscreen status on mount and changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
   // Progress Bar Calculation
-  const winDistance = currentLevel ? currentLevel.winDistance : GAME_CONFIG.WIN_DISTANCE; // Use level default or fallback
+  const winDistance = currentLevel ? currentLevel.winDistance : GAME_CONFIG.WIN_DISTANCE; 
   const progress = Math.min(100, (distance / winDistance) * 100);
 
   // Time labels for progress bar
@@ -87,8 +110,17 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-pink-50 to-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar">
         
+        {/* Fullscreen Toggle - Top Left */}
+        <button 
+            onClick={toggleFullscreen}
+            className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm border border-slate-200 text-slate-600 hover:bg-white hover:text-sky-500 transition-colors"
+            aria-label="Toggle Fullscreen"
+        >
+            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+        </button>
+
         {/* Logo Section */}
-        <div className="mb-6 mt-4 relative flex-shrink-0">
+        <div className="mb-6 mt-8 relative flex-shrink-0">
             <div className="absolute inset-0 bg-sky-400/20 rounded-full blur-xl animate-pulse"></div>
             <div className="relative bg-white p-4 rounded-3xl shadow-xl ring-4 ring-white/50 transform hover:scale-105 transition-transform duration-300">
                 <Bike size={64} className="text-sky-500" />
@@ -109,7 +141,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                 目标: 8:30 前打卡保住全勤奖
             </p>
             
-            {/* NEW Warning Tag */}
+            {/* Warning Tag */}
             <p className="text-xs text-rose-600 font-bold flex items-center gap-1 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 animate-pulse">
                 <AlertTriangle size={12} className="text-rose-500"/> 
                 警报: 务必小心路上的偷手机贼！
@@ -154,7 +186,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                             </div>
                         </div>
                         
-                        {/* Play Button - Always Colored now */}
+                        {/* Play Button */}
                         <div className={`p-2 rounded-full bg-white shadow-sm group-hover:shadow-md transition-all ${theme.icon}`}>
                             <Play size={20} fill="currentColor" className="ml-0.5"/>
                         </div>
