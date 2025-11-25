@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameStatus, Entity, PlayerState, EntityType, LevelConfig, Season } from './types';
-import { GAME_CONFIG, ENTITY_CONFIG, LEVELS, ENDLESS_LEVEL, SEASONS_ORDER } from './constants';
+import { GAME_CONFIG, ENTITY_CONFIG, LEVELS, ENDLESS_LEVEL, SEASONS_ORDER, SEASON_STYLES } from './constants';
 import { checkCollision, spawnEntity, updateThiefLogic } from './services/gameEngine';
 import { Road } from './components/Road';
 import { Player, GameEntity } from './components/Entities';
 import { GameOverlay } from './components/GameOverlay';
 import { SeasonalBackground } from './components/SeasonalBackground';
-import { StoryScene } from './components/StoryScene'; // Import new component
+import { StoryScene } from './components/StoryScene'; 
 
 const App: React.FC = () => {
   // --- State (UI Rendering) ---
@@ -489,11 +489,29 @@ const App: React.FC = () => {
       setCurrentLevel(null); 
   };
 
+  // Dynamic background styles based on season for the desktop padding area
+  const getBgStyle = () => {
+      const s = currentSeason;
+      if (s === Season.SPRING) return 'from-pink-100 via-white to-emerald-100';
+      if (s === Season.SUMMER) return 'from-sky-100 via-yellow-100 to-lime-100';
+      if (s === Season.AUTUMN) return 'from-amber-100 via-orange-50 to-red-100';
+      if (s === Season.WINTER) return 'from-slate-100 via-blue-50 to-sky-200';
+      return 'from-slate-100 to-slate-200';
+  };
+
   return (
-    <div className="relative w-full h-screen bg-neutral-900 flex justify-center items-center overflow-hidden touch-none">
+    // Outer container now has a pleasant gradient background instead of dark gray
+    <div className={`relative w-full h-screen bg-gradient-to-br ${getBgStyle()} flex justify-center items-center overflow-hidden transition-colors duration-1000`}>
+      
+      {/* Optional: Desktop background decor (blurred) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block opacity-50 blur-3xl">
+          <div className="absolute top-10 left-10 w-96 h-96 bg-white/40 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white/40 rounded-full animate-pulse delay-1000"></div>
+      </div>
+
       <div 
         ref={containerRef}
-        className="relative w-full h-full md:w-auto md:max-w-[450px] md:h-[95vh] md:rounded-3xl md:border-[8px] md:border-neutral-800 bg-slate-200 shadow-2xl overflow-hidden touch-none"
+        className="relative w-full h-full md:w-auto md:max-w-[450px] md:h-[95vh] md:rounded-3xl md:border-[8px] md:border-white/50 md:ring-4 md:ring-black/5 bg-slate-200 shadow-2xl overflow-hidden touch-none z-10"
       >
         {/* Story Scene Layer (Only visible during STORY_INTRO) */}
         {status === GameStatus.STORY_INTRO && <StoryScene countdown={countdown} />}
@@ -529,11 +547,12 @@ const App: React.FC = () => {
             currentLevel={currentLevel}
             survivalTime={survivalTime}
             currentSeason={currentSeason}
+            countdown={countdown}
         />
 
         {status === GameStatus.START && (
-            <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50">
-               Ver 7.1.0 Story Animation
+            <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50 pointer-events-none">
+               Ver 9.0.0 Desktop Polish
             </div>
         )}
       </div>
