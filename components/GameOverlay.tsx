@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { GameStatus, LevelConfig, Season } from '../types';
-import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun } from 'lucide-react';
+import { GameStatus, LevelConfig, Season, Rank } from '../types';
+import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun, ThumbsUp, Crown, Timer } from 'lucide-react';
 import { GAME_CONFIG, LEVELS, ENDLESS_LEVEL, RANKS, SEASON_STYLES } from '../constants';
 
 interface GameOverlayProps {
@@ -22,6 +22,17 @@ interface GameOverlayProps {
   currentSeason: Season; 
   countdown?: number; 
 }
+
+// Helper defined outside component to avoid scope issues
+const getRank = (seconds: number) => {
+    let bestRank = RANKS[0];
+    for (const rank of RANKS) {
+        if (seconds >= rank.minTime) {
+            bestRank = rank;
+        }
+    }
+    return bestRank;
+};
 
 export const GameOverlay: React.FC<GameOverlayProps> = ({ 
   status, score, distance, onStart, onRetry, onReturn, onNextLevel, onPause, onResume, causeOfDeath, gameTimeStr, phoneCount, currentLevel, survivalTime, currentSeason, countdown
@@ -109,19 +120,27 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       return items;
   }
 
-  const getRank = (seconds: number) => {
-      let bestRank = RANKS[0];
-      for (const rank of RANKS) {
-          if (seconds >= rank.minTime) {
-              bestRank = rank;
+  const getRankInfo = (seconds: number) => {
+      let currentRank = RANKS[0];
+      let nextRank = null;
+      
+      for (let i = 0; i < RANKS.length; i++) {
+          if (seconds >= RANKS[i].minTime) {
+              currentRank = RANKS[i];
+              // If there is a next rank, set it
+              if (i < RANKS.length - 1) {
+                  nextRank = RANKS[i + 1];
+              } else {
+                  nextRank = null; // Max rank achieved
+              }
           }
       }
-      return bestRank;
+      return { current: currentRank, next: nextRank };
   };
 
   // Generate witty fail message based on progress
   const getFailMessage = (progressPct: number, isEndless: boolean, baseCause: string) => {
-      if (isEndless) return baseCause; // Endless handles rank message separately
+      if (isEndless) return baseCause; 
 
       const failQuotesLow = [
           "刚出门就翻车？这波操作有点迷... 🤔",
@@ -152,7 +171,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       );
   };
 
-  // Memoize the message so it doesn't change on rerender
+  // Memoize messages
   const failMessage = useMemo(() => {
       if (status === GameStatus.GAME_OVER) {
           const isEndless = currentLevel?.isEndless || false;
@@ -266,7 +285,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       );
   }
 
-  // ... START SCREEN (Unchanged) ...
+  // --- START SCREEN ---
   if (status === GameStatus.START) {
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
@@ -348,7 +367,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                 <div className="bg-white/10 backdrop-blur-md w-full h-full rounded-2xl p-4 flex items-center justify-between">
                     <div className="text-left text-white">
                         <div className="font-black text-lg flex items-center gap-2">
-                            <Infinity size={20} /> 无尽摸鱼地狱
+                            <Infinity size={20} /> 无尽早高峰冲刺
                         </div>
                         <p className="text-xs text-purple-100/80">难度随时间增加，测测你的极限！</p>
                     </div>
@@ -420,7 +439,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     const isEndless = currentLevel?.isEndless;
     
     let title = "通勤失败";
-    let description = null; // Changed from string to ReactNode to support JSX
+    let description = null; 
     
     // --- HIGH EMOTION LIGHT GRADIENTS ---
     let bgTheme = "bg-gradient-to-br from-slate-200 to-slate-300"; 
@@ -429,17 +448,20 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     let textColor = "text-slate-800";
     let subTextColor = "text-slate-600";
     let overlayAnim = "animate-in fade-in duration-500";
+    let showEmote = null;
 
     const isStolen = causeOfDeath?.includes("偷") || causeOfDeath?.includes("抢");
     const isCrash = causeOfDeath?.includes("车") || causeOfDeath?.includes("撞");
 
     if (isWin) {
       title = "打卡成功！";
+      // Victory: Golden Sunlight / Mint Freshness (Stronger joy)
       bgTheme = "bg-gradient-to-br from-emerald-100 via-yellow-100 to-orange-100"; 
       iconBg = "bg-yellow-400";
       MainIcon = Trophy;
       textColor = "text-emerald-800";
       subTextColor = "text-emerald-700";
+      showEmote = <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">🥳</div>;
       const extraPhones = phoneCount - 1;
       if (extraPhones > 0) {
         description = `汪汪不仅在8:30前赶到了公司，还顺手捡了 ${extraPhones} 部手机，简直是打工人之神！`;
@@ -447,37 +469,56 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         description = "汪汪在8:30前安全抵达了公司，保住了这个月的全勤奖！";
       }
     } else if (isEndless) {
-        title = "摸鱼结束";
-        bgTheme = "bg-gradient-to-br from-violet-100 to-fuchsia-100";
-        const rank = getRank(survivalTime);
+        const rankInfo = getRank(survivalTime);
+        const isHighRank = survivalTime >= 75; // "极限踩点王" and above
+        
+        if (isHighRank) {
+            title = "冲刺结束！";
+            bgTheme = "bg-gradient-to-br from-purple-100 via-pink-100 to-rose-100"; // Celebration vibe
+            iconBg = "bg-purple-500";
+            MainIcon = Award;
+            textColor = "text-purple-900";
+            showEmote = <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">😎</div>;
+        } else {
+            title = "冲刺失败";
+            bgTheme = "bg-gradient-to-br from-slate-200 to-slate-300"; // Sad vibe
+            iconBg = "bg-slate-400";
+            MainIcon = ThumbsUp; // "Good try"
+            textColor = "text-slate-800";
+            showEmote = <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">😭</div>;
+        }
+
         description = (
             <>
-                <span className="block mb-2 opacity-80 text-sm">你已经很努力了...</span>
-                <span className="block font-bold text-lg text-purple-900">{rank.message}</span>
+                <span className="block mb-2 opacity-80 text-sm">{isHighRank ? "太强了！这波操作行云流水！" : "别灰心，下次一定能冲更远！"}</span>
+                <span className={`block font-bold text-lg ${isHighRank ? 'text-purple-600' : 'text-slate-600'}`}>{rankInfo.message}</span>
             </>
         );
-        MainIcon = Award;
-        iconBg = "bg-purple-500";
-        textColor = "text-purple-900";
+        
     } else {
-        // Dynamic fail message for normal levels
+        // Normal Game Over
         description = failMessage; 
 
         if (isStolen) {
             title = "手机被偷啦！";
+            // Stolen: Deep Blue / Grey (Sadness, cold)
             bgTheme = "bg-gradient-to-br from-indigo-100 to-slate-200"; 
             iconBg = "bg-indigo-500";
             MainIcon = Smartphone; 
             textColor = "text-indigo-900";
             subTextColor = "text-slate-600";
+            showEmote = <div className="absolute -top-4 -right-4 text-5xl animate-bounce delay-100">😭</div>;
         } else if (isCrash) {
             title = "撞到车啦！";
+            // Crash: Red / Orange (Alarming, hot)
             bgTheme = "bg-gradient-to-br from-red-100 to-orange-200"; 
             iconBg = "bg-red-500";
             MainIcon = AlertTriangle;
             textColor = "text-red-900";
             subTextColor = "text-red-700";
+            // Add shake effect for crash
             overlayAnim += " animate-[shake_0.5s_ease-in-out]"; 
+            showEmote = <div className="absolute -top-4 -left-4 text-5xl animate-spin-slow">😵‍💫</div>;
         }
     }
 
@@ -517,10 +558,15 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             </button>
         );
     }
+    
+    // Rank Info for Endless
+    const rankInfo = isEndless ? getRankInfo(survivalTime) : null;
+    const currentRankData = isEndless ? getRank(survivalTime) : null;
 
     return (
       <div className={`absolute inset-0 ${bgTheme} z-50 flex flex-col items-center justify-center p-6 text-center ${overlayAnim}`}>
         
+        {/* Background Elements for Emotion */}
         {isCrash && (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent animate-pulse pointer-events-none"></div>
         )}
@@ -535,19 +581,29 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
              <div className={`p-6 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin ? 'animate-bounce' : 'animate-pulse'}`}>
                 <MainIcon size={64} className="text-white drop-shadow-md" />
              </div>
-             {isStolen && <div className="absolute -top-4 -right-4 text-5xl animate-bounce delay-100">😭</div>}
-             {isCrash && <div className="absolute -top-4 -left-4 text-5xl animate-spin-slow">😵‍💫</div>}
-             {isWin && <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">🥳</div>}
+             {showEmote}
         </div>
         
         <h2 className={`text-4xl font-black mb-3 drop-shadow-sm tracking-tight ${textColor}`}>
           {title}
         </h2>
         
-        {isEndless && (
-            <div className="mb-4 bg-white/60 px-6 py-2 rounded-full border border-white/50 backdrop-blur-md animate-in zoom-in delay-200 shadow-sm">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">本次称号</span>
-                <div className="text-2xl font-black text-purple-600 drop-shadow-sm">{getRank(survivalTime).title}</div>
+        {isEndless && currentRankData && (
+            <div className="w-full max-w-xs mb-4 space-y-2">
+                <div className="bg-white/60 px-6 py-2 rounded-full border border-white/50 backdrop-blur-md animate-in zoom-in delay-200 shadow-sm">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">本次称号</span>
+                    <div className={`text-2xl font-black drop-shadow-sm ${survivalTime >= 75 ? 'text-purple-600' : 'text-slate-700'}`}>
+                        {currentRankData.title}
+                    </div>
+                </div>
+                
+                {/* Next Rank Progress */}
+                {rankInfo && rankInfo.next && (
+                    <div className="text-xs font-medium text-slate-500 flex items-center justify-center gap-1 bg-black/5 py-1 px-3 rounded-full mx-auto w-fit">
+                        <Crown size={12} className="text-amber-500" />
+                        距离 <span className="font-bold text-amber-600">{rankInfo.next.title}</span> 还差 {Math.ceil(rankInfo.next.minTime - survivalTime)} 秒
+                    </div>
+                )}
             </div>
         )}
 
