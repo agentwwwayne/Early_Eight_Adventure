@@ -32,11 +32,9 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
   const winDistance = currentLevel ? currentLevel.winDistance : GAME_CONFIG.WIN_DISTANCE; 
   const progress = Math.min(100, (distance / winDistance) * 100);
 
-  // Time labels for progress bar
   const startH = currentLevel ? currentLevel.startHour : GAME_CONFIG.END_HOUR;
   const startM = currentLevel ? currentLevel.startMinute : 0;
   
-  // Helper to format time
   const formatTime = (h: number, m: number) => `${h}:${m < 10 ? '0'+m : m}`;
   
   const formatDuration = (seconds: number) => {
@@ -89,43 +87,23 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       }
   };
 
-  // Helper to render seasonal floating elements
   const renderSeasonalDecor = (season: Season) => {
       const items = [];
       const count = 5;
-      
       for(let i = 0; i < count; i++) {
           let Decor = null;
           let animClass = '';
-          
           const style = {
               top: `${Math.random() * 80 + 10}%`,
               left: `${Math.random() * 80 + 10}%`,
               animationDelay: `${i * 0.5}s`,
               opacity: 0.6
           };
-
-          if (season === Season.SPRING) {
-              Decor = <Flower size={16} className="text-pink-300" fill="currentColor" />;
-              animClass = 'animate-bounce'; 
-          } else if (season === Season.SUMMER) {
-              Decor = <Sun size={16} className="text-yellow-400" fill="currentColor" />;
-              animClass = 'animate-pulse';
-          } else if (season === Season.AUTUMN) {
-              Decor = <Leaf size={16} className="text-orange-400" fill="currentColor" />;
-              animClass = 'animate-spin-slow'; // Custom slow spin logic or reuse bounce
-          } else if (season === Season.WINTER) {
-              Decor = <Snowflake size={16} className="text-sky-200" />;
-              animClass = 'animate-pulse';
-          }
-
-          if (Decor) {
-              items.push(
-                  <div key={`pause-decor-${i}`} className={`absolute ${animClass} pointer-events-none`} style={style}>
-                      {Decor}
-                  </div>
-              );
-          }
+          if (season === Season.SPRING) { Decor = <Flower size={16} className="text-pink-300" fill="currentColor" />; animClass = 'animate-bounce'; } 
+          else if (season === Season.SUMMER) { Decor = <Sun size={16} className="text-yellow-400" fill="currentColor" />; animClass = 'animate-pulse'; } 
+          else if (season === Season.AUTUMN) { Decor = <Leaf size={16} className="text-orange-400" fill="currentColor" />; animClass = 'animate-spin-slow'; } 
+          else if (season === Season.WINTER) { Decor = <Snowflake size={16} className="text-sky-200" />; animClass = 'animate-pulse'; }
+          if (Decor) { items.push(<div key={`pause-decor-${i}`} className={`absolute ${animClass} pointer-events-none`} style={style}>{Decor}</div>); }
       }
       return items;
   }
@@ -147,7 +125,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         <div className="flex justify-between items-start mb-3">
             
             <div className="flex gap-2 items-center">
-                {/* Pause Button - Pointer events auto to allow clicking */}
                 <button 
                     onClick={onPause}
                     className="pointer-events-auto bg-white/90 backdrop-blur-md p-2 rounded-xl border-2 border-slate-100 shadow-md text-slate-600 active:scale-90 transition-transform hover:bg-white"
@@ -155,7 +132,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                     <Pause size={20} fill="currentColor" />
                 </button>
 
-                {/* Time Card */}
                 <div className="bg-white/90 backdrop-blur-md text-slate-700 px-3 py-1.5 rounded-xl border-2 border-slate-100 shadow-md flex items-center gap-2">
                     <Clock size={16} className="text-sky-500" />
                     <span className="font-bold font-mono text-lg">
@@ -164,12 +140,10 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                 </div>
             </div>
 
-            {/* Level Badge (Hidden on very small screens if needed, but flex handles it) */}
             <div className={`bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold border shadow-sm hidden sm:block ${currentLevel?.id === 'HARD' ? 'text-rose-600 border-rose-200' : 'text-slate-600 border-slate-200'}`}>
                 {currentLevel?.name}
             </div>
 
-            {/* Phone Counter (Important) */}
             <div className={`bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border-2 shadow-md flex items-center gap-2 transition-colors ${phoneCount === 1 ? 'border-rose-200 bg-rose-50' : 'border-emerald-100'}`}>
               <Smartphone size={18} className={phoneCount === 1 ? "text-rose-500 animate-pulse" : "text-emerald-500"} />
               <span className={`font-black text-lg ${phoneCount === 1 ? "text-rose-600" : "text-emerald-600"}`}>
@@ -178,7 +152,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             </div>
         </div>
 
-        {/* Commute Progress Bar (Hidden in Endless) */}
         {!currentLevel?.isEndless && (
             <div className="relative mt-2">
                 <div className="flex justify-between text-[10px] text-slate-500 font-bold mb-1">
@@ -205,11 +178,9 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/30 backdrop-blur-sm p-6 animate-in fade-in duration-200">
             <div className={`bg-gradient-to-b ${pauseTheme.bg} rounded-3xl w-full max-w-xs p-6 shadow-2xl border-2 ${pauseTheme.border} relative overflow-hidden`}>
                 
-                {/* Decorative background blobs */}
                 <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-white/40 rounded-full blur-2xl"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-24 h-24 bg-white/40 rounded-full blur-2xl"></div>
                 
-                {/* Seasonal Floating Elements */}
                 {renderSeasonalDecor(currentSeason)}
 
                 <div className="relative z-10">
@@ -246,12 +217,11 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       );
   }
 
+  // ... Start and Game Over/Victory screens remain same ...
   if (status === GameStatus.START) {
     return (
-      // Updated Background: Morning Sky Gradient
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
         
-        {/* ... Decorations ... */}
         <div className="absolute top-[-10%] left-[-20%] w-64 h-64 bg-white/50 rounded-full blur-3xl animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>
         <div className="absolute top-[15%] right-[-10%] w-40 h-40 bg-yellow-200/40 rounded-full blur-2xl animate-[bounce_5s_infinite] delay-700 pointer-events-none"></div>
         <div className="absolute bottom-[15%] left-[5%] w-32 h-32 bg-pink-300/30 rounded-full blur-xl animate-[pulse_3s_ease-in-out_infinite] pointer-events-none"></div>
