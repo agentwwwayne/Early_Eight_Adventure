@@ -5,6 +5,8 @@ import { checkCollision, spawnEntity, updateThiefLogic } from './services/gameEn
 import { Road } from './components/Road';
 import { Player, GameEntity } from './components/Entities';
 import { GameOverlay } from './components/GameOverlay';
+import { SeasonalBackground } from './components/SeasonalBackground';
+import { StoryScene } from './components/StoryScene'; // Import new component
 
 const App: React.FC = () => {
   // --- State (UI Rendering) ---
@@ -17,6 +19,7 @@ const App: React.FC = () => {
   const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(null);
   const [survivalTime, setSurvivalTime] = useState(0); 
   const [currentSeason, setCurrentSeason] = useState<Season>(Season.SPRING);
+  const [countdown, setCountdown] = useState(3);
   
   const [isTouchMode, setIsTouchMode] = useState(false);
   
@@ -45,7 +48,6 @@ const App: React.FC = () => {
   const spawnTimerRef = useRef<number>(0);
   const lastInputTimeRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0); 
-  // To handle pause correctly, we need to adjust start time
   const pauseStartTimeRef = useRef<number>(0);
   const totalPausedTimeRef = useRef<number>(0);
 
@@ -53,6 +55,23 @@ const App: React.FC = () => {
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   useEffect(() => { currentSeasonRef.current = currentSeason; }, [currentSeason]);
+
+  // --- Countdown Logic ---
+  useEffect(() => {
+    let timer: number;
+    if (status === GameStatus.STORY_INTRO && countdown > 0) {
+        timer = window.setTimeout(() => {
+            setCountdown(prev => prev - 1);
+        }, 1000);
+    } else if (status === GameStatus.STORY_INTRO && countdown === 0) {
+        // Countdown finished, start game
+        setStatus(GameStatus.PLAYING);
+        statusRef.current = GameStatus.PLAYING;
+        lastTimeRef.current = performance.now();
+        startTimeRef.current = lastTimeRef.current;
+    }
+    return () => clearTimeout(timer);
+  }, [status, countdown]);
 
   const updateGameTime = useCallback((currentDist: number, level: LevelConfig) => {
     const startTotalMins = level.startHour * 60 + level.startMinute;
@@ -139,7 +158,6 @@ const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
 
-    // --- Touch "Follow Finger" Logic ---
     const handleTouch = (e: TouchEvent) => {
         if (statusRef.current !== GameStatus.PLAYING) return;
         
@@ -187,8 +205,7 @@ const App: React.FC = () => {
 
   // --- Game Loop ---
   const loop = useCallback((time: number) => {
-    // If paused, just keep looping but update lastTime so we don't have huge jump on resume
-    if (statusRef.current === GameStatus.PAUSED) {
+    if (statusRef.current === GameStatus.STORY_INTRO || statusRef.current === GameStatus.PAUSED) {
         lastTimeRef.current = time;
         requestRef.current = requestAnimationFrame(loop);
         return;
@@ -208,15 +225,12 @@ const App: React.FC = () => {
     const deltaTime = time - lastTimeRef.current;
     lastTimeRef.current = time;
 
-    // Update Survival Time for Endless Mode & Cycle Seasons
-    // Adjust for total paused time
     const actualElapsedTime = time - startTimeRef.current - totalPausedTimeRef.current;
     
     if (activeLevel.isEndless) {
         const elapsedSeconds = actualElapsedTime / 1000;
         setSurvivalTime(elapsedSeconds);
         
-        // Cycle season every 20 seconds
         const seasonIndex = Math.floor(elapsedSeconds / 20) % 4;
         if (SEASONS_ORDER[seasonIndex] !== currentSeasonRef.current) {
             const nextSeason = SEASONS_ORDER[seasonIndex];
@@ -228,7 +242,6 @@ const App: React.FC = () => {
     const currentPlayer = playerRef.current;
     const currentDistance = distanceRef.current;
 
-    // Speed Calculation
     let currentBaseSpeed = activeLevel.baseSpeed;
     if (activeLevel.isEndless) {
         const elapsedSec = actualElapsedTime / 1000;
@@ -413,7 +426,6 @@ const App: React.FC = () => {
     setCurrentLevel(level);
     currentLevelRef.current = level;
     
-    // Pick random season for non-endless, or Spring for endless start
     let startingSeason = SEASONS_ORDER[Math.floor(Math.random() * 4)];
     if (level.isEndless) startingSeason = Season.SPRING;
     
@@ -444,11 +456,11 @@ const App: React.FC = () => {
     setIsTouchMode(false); 
     
     setDeathReason('');
-    setStatus(GameStatus.PLAYING);
-    statusRef.current = GameStatus.PLAYING; 
     
-    lastTimeRef.current = performance.now();
-    startTimeRef.current = lastTimeRef.current;
+    setStatus(GameStatus.STORY_INTRO);
+    statusRef.current = GameStatus.STORY_INTRO;
+    setCountdown(3); 
+    
     totalPausedTimeRef.current = 0;
   };
 
@@ -467,7 +479,6 @@ const App: React.FC = () => {
       if (idx >= 0 && idx < LEVELS.length - 1) {
           startGame(LEVELS[idx + 1]);
       } else {
-          // Already at hard, or endless
           startGame(ENDLESS_LEVEL);
       }
   };
@@ -484,11 +495,16 @@ const App: React.FC = () => {
         ref={containerRef}
         className="relative w-full h-full md:w-auto md:max-w-[450px] md:h-[95vh] md:rounded-3xl md:border-[8px] md:border-neutral-800 bg-slate-200 shadow-2xl overflow-hidden touch-none"
       >
+        {/* Story Scene Layer (Only visible during STORY_INTRO) */}
+        {status === GameStatus.STORY_INTRO && <StoryScene countdown={countdown} />}
+
         <Road 
             speed={player.speedMultiplier * (currentLevel ? (currentLevel.baseSpeed / 1.5) : 1)} 
             isMoving={status === GameStatus.PLAYING} 
             season={currentSeason}
         />
+        
+        <SeasonalBackground season={currentSeason} />
         
         {entities.map(entity => (
             <GameEntity key={entity.id} entity={entity} season={currentSeason} />
@@ -517,7 +533,7 @@ const App: React.FC = () => {
 
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50">
-               Ver 6.1.0 Pause Theme
+               Ver 7.1.0 Story Animation
             </div>
         )}
       </div>
