@@ -103,11 +103,12 @@ export const ENDLESS_LEVEL: LevelConfig = {
     id: 'ENDLESS',
     name: '无尽摸鱼地狱',
     description: '没有尽头，看看你能坚持多久！',
-    baseSpeed: 1.3, // Starts easy
-    spawnRateMs: 1000,
+    // Updated Base Stats to match NORMAL difficulty
+    baseSpeed: 1.6, 
+    spawnRateMs: 800, 
     minThieves: 999, // Always spawn
-    thiefChance: 0.02,
-    blockadeChance: 0.2,
+    thiefChance: 0.025,
+    blockadeChance: 0.4,
     startHour: 0,
     startMinute: 0,
     winDistance: 999999,
@@ -121,9 +122,9 @@ export const RANKS: Rank[] = [
     { minTime: 20, title: '悠闲实习生', message: '虽然迟到了，但心态很好。' },
     { minTime: 45, title: '资深打工人', message: '这种程度的早高峰已经是家常便饭。' },
     { minTime: 75, title: '极限踩点王', message: '只要我骑得够快，迟到就追不上我！' },
-    { minTime: 120, title: '全勤奖猎人', message: '风里雨里，公司等你！' },
-    { minTime: 180, title: '秋名山车神', message: '连小偷都看不清你的车尾灯。' },
-    { minTime: 300, title: '时间管理大师', message: '你已经超越了时间的概念。' },
+    { minTime: 100, title: '全勤奖猎人', message: '风里雨里，公司等你！' },
+    { minTime: 125, title: '秋名山车神', message: '连小偷都看不清你的车尾灯。' },
+    { minTime: 150, title: '时间管理大师', message: '你已经超越了时间的概念。' },
 ];
 
 export const ENTITY_CONFIG: Record<EntityType, { width: number; height: number; speed: number; color: string; score: number }> = {
