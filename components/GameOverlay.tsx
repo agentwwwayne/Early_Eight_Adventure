@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { GameStatus, LevelConfig, Season, Rank } from '../types';
-import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun, ThumbsUp, Crown, Timer, CloudRain, Flame, Coffee, ThumbsDown, Share2, Download } from 'lucide-react';
+import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun, ThumbsUp, Crown, Timer, CloudRain, Flame, Coffee, ThumbsDown, Share2, Download, Sparkles } from 'lucide-react';
 import { GAME_CONFIG, LEVELS, ENDLESS_LEVEL, RANKS, SEASON_STYLES } from '../constants';
 
 // Declare html2canvas globally as it is loaded via script tag
@@ -142,121 +142,41 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       return { current: currentRank, next: nextRank };
   };
 
-  // --- EXTENDED VISUAL THEMES FOR ENDLESS RANKS ---
-  const renderEndlessEffect = (seconds: number) => {
-      if (seconds < 20) {
-          return (
-             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                 <div className="absolute inset-0 bg-slate-900/20"></div>
-                 {[...Array(40)].map((_,i) => (
-                     <div key={i} className="absolute top-[-20%] w-0.5 h-8 bg-blue-400/60 rounded-full" 
-                          style={{ 
-                              left: `${Math.random()*100}%`, 
-                              animation: `rain 0.5s linear infinite`, 
-                              animationDelay: `${Math.random()}s`,
-                              opacity: Math.random() 
-                          }}></div>
-                 ))}
-             </div>
-          );
-      }
-      if (seconds < 40) {
-          return (
-             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                 {[...Array(12)].map((_,i) => (
-                     <div key={i} className="absolute top-[-10%]" 
-                          style={{ 
-                              left: `${Math.random()*100}%`, 
-                              animation: `floatDown ${3+Math.random()*2}s linear infinite`,
-                              animationDelay: `${Math.random()*2}s` 
-                          }}>
-                         <Leaf size={16 + Math.random()*8} className="text-emerald-300/60" style={{transform: `rotate(${Math.random()*360}deg)`}} />
-                     </div>
-                 ))}
-             </div>
-          );
-      }
-      if (seconds < 60) {
+  // --- VISUAL THEMES FOR RESULT SCREENS (BOTH ENDLESS & NORMAL) ---
+  // This function now handles ALL particle effects for the result screen
+  const renderResultParticles = (type: 'win' | 'fail' | 'rank_high' | 'rank_low') => {
+      if (type === 'fail' || type === 'rank_low') {
+           // Rain / Gloomy Particles
            return (
              <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                 {[...Array(15)].map((_,i) => (
-                     <div key={i} className="absolute bottom-[-10%] bg-blue-400/30 rounded-full" 
-                          style={{ 
-                              left: `${Math.random()*100}%`, 
-                              width: `${4+Math.random()*8}px`,
-                              height: `${4+Math.random()*8}px`,
-                              animation: `bubbleUp ${2+Math.random()*3}s ease-in infinite`,
-                              animationDelay: `${Math.random()*2}s` 
-                          }}></div>
-                 ))}
-             </div>
-          );
-      }
-      if (seconds < 90) {
-           return (
-            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute inset-0 bg-orange-400/10 animate-pulse"></div>
-                {[...Array(3)].map((_,i) => (
-                     <div key={i} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 border-orange-300/30 rounded-full"
-                          style={{
-                              width: '100px',
-                              height: '100px',
-                              animation: `ripple 2s linear infinite`,
-                              animationDelay: `${i*0.6}s`
-                          }}></div>
-                ))}
-            </div>
-           );
-      }
-      if (seconds < 120) {
-           return (
-             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                 <div className="absolute inset-0 bg-slate-900/10 mix-blend-multiply"></div>
                  {[...Array(30)].map((_,i) => (
-                     <div key={i} className={`absolute top-[-10%] w-1.5 h-3 ${['bg-rose-400','bg-yellow-400','bg-blue-400'][i%3]}`} 
+                     <div key={i} className="absolute top-[-20%] w-0.5 h-6 bg-blue-400/40 rounded-full" 
                           style={{ 
                               left: `${Math.random()*100}%`, 
-                              animation: `confetti ${2+Math.random()}s linear infinite`,
-                              animationDelay: `${Math.random()*2}s` 
+                              animation: `rain 0.8s linear infinite`, 
+                              animationDelay: `${Math.random()}s`
                           }}></div>
                  ))}
              </div>
            );
-      }
-      if (seconds < 150) {
+      } else {
+           // Confetti / Celebration Particles
            return (
              <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                 <div className="absolute inset-0 bg-purple-500/5"></div>
-                 {[...Array(8)].map((_,i) => (
-                     <div key={i} className="absolute h-[1px] bg-white/40" 
+                 {[...Array(40)].map((_,i) => (
+                     <div key={i} className={`absolute top-[-10%] w-2 h-4 ${['bg-yellow-400','bg-rose-400','bg-emerald-400','bg-purple-400'][i%4]} rotate-45`} 
                           style={{ 
-                              top: `${Math.random()*100}%`,
-                              left: '-10%',
-                              width: '20%',
-                              animation: `shootingStar 0.5s linear infinite`,
-                              animationDelay: `${Math.random()*2}s`
+                              left: `${Math.random()*100}%`, 
+                              animation: `confetti ${2+Math.random()*2}s linear infinite`,
+                              animationDelay: `${Math.random()*2}s`,
+                              opacity: 0.8
                           }}></div>
                  ))}
+                 <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent"></div>
              </div>
            );
       }
-      return (
-         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-             <div className="absolute inset-0 bg-yellow-400/10 animate-pulse"></div>
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[conic-gradient(from_0deg,transparent,rgba(255,215,0,0.1),transparent)] animate-[spin_10s_linear_infinite]"></div>
-             {[...Array(20)].map((_,i) => (
-                 <div key={i} className="absolute text-yellow-200" 
-                      style={{ 
-                          top: `${Math.random()*100}%`, 
-                          left: `${Math.random()*100}%`, 
-                          animation: `twinkle 1.5s ease-in-out infinite`,
-                          animationDelay: `${Math.random()}s`,
-                          transform: `scale(${0.5+Math.random()})`
-                      }}>
-                     <Star size={12} fill="currentColor" />
-                 </div>
-             ))}
-         </div>
-      );
   };
 
   const getEndlessTheme = (seconds: number) => {
@@ -268,7 +188,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           subTextColor: "text-slate-400",
           emote: "⛈️",
           anim: "animate-none",
-          panelBg: "bg-white/10 border-white/10 text-white"
+          panelBg: "bg-white/10 border-white/10 text-white",
+          particleType: 'rank_low' as const
       };
       if (seconds < 40) return {
           bg: "from-emerald-50 to-teal-100",
@@ -278,7 +199,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           subTextColor: "text-emerald-700",
           emote: "🍵",
           anim: "animate-bounce",
-          panelBg: "bg-white/60 border-white/40 text-slate-800"
+          panelBg: "bg-white/60 border-white/40 text-slate-800",
+          particleType: 'rank_low' as const
       };
       if (seconds < 60) return {
           bg: "from-blue-50 to-indigo-100",
@@ -288,8 +210,10 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           subTextColor: "text-blue-700",
           emote: "📱",
           anim: "animate-pulse",
-          panelBg: "bg-white/60 border-white/40 text-slate-800"
+          panelBg: "bg-white/60 border-white/40 text-slate-800",
+          particleType: 'rank_low' as const
       };
+      // ... (Other ranks upgraded to high visual)
       if (seconds < 90) return {
           bg: "from-orange-50 to-amber-100",
           iconBg: "bg-orange-500",
@@ -298,7 +222,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           subTextColor: "text-orange-700",
           emote: "⚡",
           anim: "animate-[shake_0.5s_ease-in-out]",
-          panelBg: "bg-white/60 border-white/40 text-slate-800"
+          panelBg: "bg-white/60 border-white/40 text-slate-800",
+          particleType: 'rank_high' as const
       };
       if (seconds < 120) return {
           bg: "from-rose-100 to-pink-200",
@@ -308,7 +233,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           subTextColor: "text-rose-700",
           emote: "🎖️",
           anim: "animate-bounce",
-          panelBg: "bg-white/60 border-white/40 text-slate-800"
+          panelBg: "bg-white/60 border-white/40 text-slate-800",
+          particleType: 'rank_high' as const
       };
       if (seconds < 150) return {
           bg: "from-violet-900 to-fuchsia-900",
@@ -318,7 +244,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           subTextColor: "text-fuchsia-200",
           emote: "🏎️",
           anim: "animate-spin-slow",
-          panelBg: "bg-white/10 border-white/20 text-white"
+          panelBg: "bg-white/10 border-white/20 text-white",
+          particleType: 'rank_high' as const
       };
       return {
           bg: "from-amber-100 via-yellow-100 to-orange-100", 
@@ -328,7 +255,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           subTextColor: "text-amber-700",
           emote: "👑",
           anim: "animate-[ping_1s_infinite]",
-          panelBg: "bg-white/60 border-white/40 text-slate-800"
+          panelBg: "bg-white/60 border-white/40 text-slate-800",
+          particleType: 'rank_high' as const
       };
   };
 
@@ -383,7 +311,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                   const canvas = await html2canvas(element, { 
                       backgroundColor: null, 
                       scale: 2,
-                      useCORS: true 
+                      useCORS: true,
+                      allowTaint: true 
                   });
                   const data = canvas.toDataURL('image/png');
                   setShareImg(data);
@@ -484,9 +413,10 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
 
   // --- START SCREEN ---
   if (status === GameStatus.START) {
+    // ... (Same as before)
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
-        {/* Decorations */}
+        {/* ... Decor ... */}
         <div className="absolute top-[-10%] left-[-20%] w-64 h-64 bg-white/50 rounded-full blur-3xl animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>
         <div className="absolute top-[15%] right-[-10%] w-40 h-40 bg-yellow-200/40 rounded-full blur-2xl animate-[bounce_5s_infinite] delay-700 pointer-events-none"></div>
         <div className="absolute bottom-[15%] left-[5%] w-32 h-32 bg-pink-300/30 rounded-full blur-xl animate-[pulse_3s_ease-in-out_infinite] pointer-events-none"></div>
@@ -557,7 +487,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                         <button onClick={() => setShowRules(false)} className="p-1 bg-slate-200 rounded-full text-slate-500 hover:bg-slate-300 active:scale-90 transition-all"><X size={20} /></button>
                     </div>
                     <div className="p-6 space-y-5">
-                        {/* Rules Content */}
                         <div className="flex gap-4 items-start">
                             <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 text-sky-600 font-bold">1</div>
                             <div><h3 className="font-bold text-slate-800 text-sm mb-1">按住滑动or键盘操控</h3><p className="text-xs text-slate-500 leading-relaxed">手指滑动屏幕or键盘控制，控制主角左右变道或上下加速/减速。</p></div>
@@ -596,11 +525,11 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     let overlayAnim = "animate-in fade-in duration-500";
     let showEmote = null;
     let panelBg = "bg-white/60 border-white/40"; 
+    let particleType: 'win' | 'fail' | 'rank_high' | 'rank_low' = 'fail';
 
     const isStolen = causeOfDeath?.includes("偷") || causeOfDeath?.includes("抢");
     const isCrash = causeOfDeath?.includes("车") || causeOfDeath?.includes("撞");
 
-    // --- THEME DETERMINATION ---
     if (isWin) {
       title = "打卡成功！";
       bgTheme = "bg-gradient-to-br from-emerald-100 via-yellow-100 to-orange-100"; 
@@ -609,6 +538,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       textColor = "text-emerald-800";
       subTextColor = "text-emerald-700";
       showEmote = <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">🥳</div>;
+      particleType = 'win';
       const extraPhones = phoneCount - 1;
       if (extraPhones > 0) {
         description = `你不仅在8:30前赶到了公司，还顺手捡了 ${extraPhones} 部手机，简直是打工人之神！`;
@@ -618,7 +548,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     } else if (isEndless) {
         const rankInfo = getRankInfo(survivalTime);
         const currentRankData = getRank(survivalTime);
-        
         const theme = getEndlessTheme(survivalTime);
         
         title = survivalTime < 75 ? "冲刺结束" : "冲刺成功";
@@ -630,6 +559,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         showEmote = <div className={`absolute -top-6 right-0 text-5xl delay-100 ${theme.anim}`}>{theme.emote}</div>;
         if (survivalTime >= 75) overlayAnim += " animate-[pulse_3s_infinite]";
         panelBg = theme.panelBg || "bg-white/60 border-white/40";
+        particleType = theme.particleType;
 
         description = (
             <>
@@ -643,8 +573,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         );
         
     } else {
-        // Normal Fail
         description = failMessage; 
+        particleType = 'fail';
         if (isStolen) {
             title = "手机被偷啦！";
             bgTheme = "bg-gradient-to-br from-indigo-100 to-slate-200"; 
@@ -694,63 +624,85 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     const rankColorClass = isEndless ? getEndlessTheme(survivalTime).textColor : 'text-purple-600';
 
     // --- RENDER SHARE CARD (HIDDEN) ---
-    // We render this off-screen to capture it for sharing.
-    // Styling matches the result theme but fixed layout for image generation.
+    // Completely redesigned for high aesthetic appeal
     const ShareCard = () => (
-        <div id="share-card" className="absolute top-[-9999px] left-[-9999px] w-[450px] h-[700px] flex flex-col items-center justify-center p-8 text-center" style={{ background: '#f8fafc' }}>
-             {/* Background Layer */}
-             <div className={`absolute inset-0 opacity-30 ${bgTheme.replace('bg-gradient-to-br', 'bg-gradient-to-b')}`}></div>
+        <div id="share-card" className="absolute top-[-9999px] left-[-9999px] w-[600px] h-[900px] flex flex-col overflow-hidden bg-white">
              
-             {/* Card Container */}
-             <div className="relative z-10 bg-white p-8 rounded-[40px] shadow-2xl border-[6px] border-slate-50 w-full flex flex-col items-center gap-6 overflow-hidden">
+             {/* Top 2/3: Visual Area with Gradient */}
+             <div className={`w-full h-[65%] relative ${bgTheme.replace('bg-gradient-to-br', 'bg-gradient-to-b')} flex flex-col items-center justify-center p-8`}>
+                 {/* Background Decor */}
+                 <div className="absolute top-0 left-0 w-full h-full opacity-30 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+                 <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-white/20 rounded-full blur-3xl"></div>
+                 <div className="absolute bottom-[-10%] left-[-10%] w-80 h-80 bg-white/20 rounded-full blur-3xl"></div>
                  
-                 {/* Top Decorative Badge */}
-                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-1.5 bg-slate-200 rounded-b-full"></div>
+                 {/* Floating Particles on Card */}
+                 <div className="absolute inset-0 opacity-60">
+                     {[...Array(15)].map((_,i) => (
+                         <div key={i} className="absolute bg-white/40 rounded-full" style={{ top: `${Math.random()*100}%`, left: `${Math.random()*100}%`, width: `${4+Math.random()*8}px`, height: `${4+Math.random()*8}px` }}></div>
+                     ))}
+                 </div>
 
-                 {/* Icon Circle */}
-                 <div className={`p-6 rounded-full ${iconBg} text-white shadow-lg mt-4`}>
-                     <MainIcon size={80} />
+                 {/* Main Icon Container */}
+                 <div className={`relative z-10 p-10 rounded-full ${iconBg} text-white shadow-2xl mb-6 border-8 border-white/30`}>
+                     <MainIcon size={100} strokeWidth={1.5} />
+                 </div>
+
+                 {/* Title */}
+                 <div className={`relative z-10 text-6xl font-black text-white tracking-tight drop-shadow-md mb-2`}>
+                     {title}
                  </div>
                  
-                 {/* Title Section */}
-                 <div className="space-y-2">
-                    <div className="text-base text-slate-400 font-bold tracking-[0.2em] uppercase">早八大冒险</div>
-                    <div className={`text-4xl font-black ${textColor} leading-tight`}>{title}</div>
-                 </div>
-                 
-                 {/* Divider */}
-                 <div className="w-3/4 h-0.5 bg-slate-100 my-2"></div>
-                 
-                 {/* Stats Section - Dynamic Content */}
-                 {isEndless ? (
-                     <div className="bg-slate-50 rounded-2xl p-6 w-full">
-                        <div className="text-5xl font-black text-slate-800 mb-2">{formatDuration(survivalTime)}</div>
-                        <div className={`text-2xl font-bold ${rankColorClass} flex items-center justify-center gap-2`}>
-                            {currentRankData?.title}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-2">{currentRankData?.message}</div>
-                     </div>
-                 ) : (
-                     <div className="bg-slate-50 rounded-2xl p-6 w-full">
-                        <div className="text-5xl font-black text-slate-800 mb-2">{gameTimeStr}</div>
-                        <div className="text-lg text-slate-500 font-bold flex items-center justify-center gap-2">
-                            <Smartphone size={20} className="text-emerald-500"/> 捡到 {phoneCount} 部手机
-                        </div>
+                 {/* Rank Title (Endless Only) */}
+                 {isEndless && currentRankData && (
+                     <div className="relative z-10 bg-white/20 backdrop-blur-md px-8 py-2 rounded-full border border-white/40 mt-2">
+                         <div className="text-3xl font-bold text-white drop-shadow-sm tracking-widest uppercase">
+                             {currentRankData.title}
+                         </div>
                      </div>
                  )}
+             </div>
 
-                 {/* Divider */}
-                 <div className="w-full h-0.5 bg-slate-100 my-2"></div>
-                 
-                 {/* Footer */}
-                 <div className="flex items-center gap-3 text-slate-400 text-sm font-mono bg-slate-50 px-4 py-2 rounded-full">
-                     <Bike size={16} /> 
-                     <span className="font-bold">Scan to Challenge!</span>
+             {/* Bottom 1/3: Info & QR */}
+             <div className="w-full h-[35%] bg-white flex flex-col p-8 relative">
+                 {/* Zigzag tear effect separator */}
+                 <div className="absolute top-[-10px] left-0 w-full h-4 bg-white" style={{ clipPath: 'polygon(0 100%, 2% 0, 4% 100%, 6% 0, 8% 100%, 10% 0, 12% 100%, 14% 0, 16% 100%, 18% 0, 20% 100%, 22% 0, 24% 100%, 26% 0, 28% 100%, 30% 0, 32% 100%, 34% 0, 36% 100%, 38% 0, 40% 100%, 42% 0, 44% 100%, 46% 0, 48% 100%, 50% 0, 52% 100%, 54% 0, 56% 100%, 58% 0, 60% 100%, 62% 0, 64% 100%, 66% 0, 68% 100%, 70% 0, 72% 100%, 74% 0, 76% 100%, 78% 0, 80% 100%, 82% 0, 84% 100%, 86% 0, 88% 100%, 90% 0, 92% 100%, 94% 0, 96% 100%, 98% 0, 100% 100%)' }}></div>
+
+                 <div className="flex-1 flex items-center justify-between gap-8">
+                     {/* Stats */}
+                     <div className="flex-1">
+                         <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">
+                             {isEndless ? "SURVIVAL TIME" : "TIME RECORD"}
+                         </div>
+                         <div className="text-6xl font-black text-slate-800 mb-4 leading-none">
+                             {isEndless ? formatDuration(survivalTime) : gameTimeStr}
+                         </div>
+                         
+                         <div className="flex items-center gap-2 text-slate-500 font-bold bg-slate-100 px-4 py-2 rounded-xl w-fit">
+                             <Smartphone size={20} className="text-emerald-500" />
+                             <span>Collected: {phoneCount}</span>
+                         </div>
+                     </div>
+
+                     {/* QR Code Area */}
+                     <div className="flex flex-col items-center gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                         <div className="w-24 h-24 bg-white p-1 rounded-lg shadow-sm">
+                            <img 
+                                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://woof-woof-early-eight-adventure.vercel.app/" 
+                                alt="QR Code" 
+                                className="w-full h-full object-contain" 
+                                crossOrigin="anonymous"
+                            />
+                         </div>
+                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scan to Play</div>
+                     </div>
                  </div>
                  
-                 {/* Fake QR Code Placeholders */}
-                 <div className="absolute bottom-4 right-4 opacity-20">
-                     <div className="w-8 h-8 border-2 border-slate-900 flex items-center justify-center"><div className="w-4 h-4 bg-slate-900"></div></div>
+                 <div className="mt-4 flex justify-between items-end">
+                      <div className="flex items-center gap-2">
+                          <Bike size={20} className="text-slate-400"/>
+                          <span className="text-lg font-black text-slate-800 tracking-tight">早八大冒险</span>
+                      </div>
+                      <div className="text-xs font-mono text-slate-400">{new Date().toDateString()}</div>
                  </div>
              </div>
         </div>
@@ -775,92 +727,83 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             </div>
         )}
 
-        {isEndless && renderEndlessEffect(survivalTime)}
-        {isCrash && (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent animate-pulse pointer-events-none"></div>
-        )}
-        {isWin && (
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-10 left-1/4 w-32 h-32 bg-yellow-300/30 rounded-full blur-3xl animate-[ping_3s_infinite]"></div>
-                <div className="absolute bottom-20 right-10 w-40 h-40 bg-emerald-300/20 rounded-full blur-3xl animate-[pulse_4s_infinite]"></div>
-            </div>
-        )}
+        {/* RENDER GLOBAL PARTICLES ON OVERLAY */}
+        {renderResultParticles(particleType)}
+
+        <div className="mb-6 relative z-10">
+             <div className={`p-6 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin || (isEndless && survivalTime > 75) ? 'animate-bounce' : 'animate-pulse'}`}>
+                <MainIcon size={64} className="text-white drop-shadow-md" />
+             </div>
+             {showEmote}
+        </div>
         
-        {/* Main Content Container - Added mt-auto mb-auto to center vertically when possible */}
-        <div className="relative z-10 w-full max-w-xs flex flex-col items-center mt-auto mb-auto pt-4 pb-4">
-             <div className="mb-4 relative flex-shrink-0">
-                <div className={`p-5 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin || (isEndless && survivalTime > 75) ? 'animate-bounce' : 'animate-pulse'}`}>
-                    <MainIcon size={56} className="text-white drop-shadow-md" />
+        <h2 className={`relative z-10 text-4xl font-black mb-3 drop-shadow-sm tracking-tight ${textColor}`}>
+          {title}
+        </h2>
+        
+        {isEndless && currentRankData && (
+            <div className="w-full max-w-xs mb-4 space-y-2 relative z-10 flex-shrink-0">
+                <div className={`${panelBg} px-6 py-3 rounded-2xl backdrop-blur-md shadow-sm flex flex-col items-center transition-all duration-500`}>
+                    <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest block mb-1">本次称号</span>
+                    <div className={`text-2xl font-black drop-shadow-sm ${rankColorClass}`}>
+                        {currentRankData.title}
+                    </div>
                 </div>
-                {showEmote}
-            </div>
-            
-            <h2 className={`relative z-10 text-3xl font-black mb-3 drop-shadow-sm tracking-tight ${textColor}`}>{title}</h2>
-            
-            {isEndless && currentRankData && (
-                <div className="w-full mb-4 space-y-2 relative z-10 flex-shrink-0">
-                    <div className={`${panelBg} px-6 py-3 rounded-2xl backdrop-blur-md shadow-sm flex flex-col items-center transition-all duration-500`}>
-                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest block mb-1">本次称号</span>
-                        <div className={`text-2xl font-black drop-shadow-sm ${rankColorClass}`}>
-                            {currentRankData.title}
+                
+                {rankInfo && rankInfo.next && (
+                    <div className="bg-white/40 p-3 rounded-xl border border-white/30 backdrop-blur-sm animate-in slide-in-from-bottom-2 delay-300">
+                        <div className="flex justify-between items-center text-[10px] font-medium opacity-80 mb-1">
+                            <span className="flex items-center gap-1"><Crown size={10}/> {rankInfo.current.title}</span>
+                            <span className="flex items-center gap-1 font-bold"><Crown size={10}/> {rankInfo.next.title}</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-gradient-to-r from-white/50 to-white transition-all duration-1000"
+                                style={{ width: `${((survivalTime - rankInfo.current.minTime) / (rankInfo.next.minTime - rankInfo.current.minTime)) * 100}%` }}
+                            ></div>
+                        </div>
+                        <div className="text-center text-[10px] opacity-70 mt-1 font-bold">
+                            再坚持 {Math.ceil(rankInfo.next.minTime - survivalTime)} 秒升级！加油！
                         </div>
                     </div>
-                    
-                    {rankInfo && rankInfo.next && (
-                        <div className="bg-white/40 p-3 rounded-xl border border-white/30 backdrop-blur-sm animate-in slide-in-from-bottom-2 delay-300">
-                            <div className="flex justify-between items-center text-[10px] font-medium opacity-80 mb-1">
-                                <span className="flex items-center gap-1"><Crown size={10}/> {rankInfo.current.title}</span>
-                                <span className="flex items-center gap-1 font-bold"><Crown size={10}/> {rankInfo.next.title}</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-white/50 to-white transition-all duration-1000"
-                                    style={{ width: `${((survivalTime - rankInfo.current.minTime) / (rankInfo.next.minTime - rankInfo.current.minTime)) * 100}%` }}
-                                ></div>
-                            </div>
-                            <div className="text-center text-[10px] opacity-70 mt-1 font-bold">
-                                再坚持 {Math.ceil(rankInfo.next.minTime - survivalTime)} 秒升级！加油！
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            <div className={`relative z-10 text-base ${subTextColor} mb-6 font-medium px-2 leading-relaxed max-w-xs`}>
-                {description}
+                )}
             </div>
+        )}
 
-            <div className="grid grid-cols-2 gap-3 w-full mb-6 relative z-10 flex-shrink-0">
-                <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
-                    <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">{isEndless ? '坚持时长' : '最终时间'}</div>
-                    <div className="text-xl font-black">{isEndless ? formatDuration(survivalTime) : gameTimeStr}</div>
-                </div>
-                <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
-                    <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">剩余手机</div>
-                    <div className={`text-xl font-black ${phoneCount === 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{phoneCount}</div>
-                </div>
+        <div className={`relative z-10 text-base ${subTextColor} mb-6 font-medium px-2 leading-relaxed max-w-xs`}>
+            {description}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 w-full mb-6 relative z-10 flex-shrink-0">
+            <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
+                <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">{isEndless ? '坚持时长' : '最终时间'}</div>
+                <div className="text-xl font-black">{isEndless ? formatDuration(survivalTime) : gameTimeStr}</div>
             </div>
-
-            <div className="w-full space-y-3 relative z-10 flex-shrink-0">
-                {PrimaryAction}
-                
-                <button 
-                    onClick={handleShare}
-                    disabled={isGeneratingShare}
-                    className="w-full bg-white/80 hover:bg-white active:scale-95 text-slate-700 font-bold py-3 px-8 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
-                >
-                    {isGeneratingShare ? <RefreshCw size={18} className="animate-spin"/> : <Share2 size={18} />}
-                    {isGeneratingShare ? "生成中..." : "分享战绩"}
-                </button>
-
-                <button 
-                    onClick={onReturn}
-                    className="w-full bg-white/40 hover:bg-white/60 active:bg-white/70 active:scale-95 text-slate-800 font-bold py-3 px-8 rounded-xl backdrop-blur-sm border border-white/50 transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                    <Home size={18} />
-                    返回选关
-                </button>
+            <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
+                <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">剩余手机</div>
+                <div className={`text-xl font-black ${phoneCount === 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{phoneCount}</div>
             </div>
+        </div>
+
+        <div className="w-full space-y-3 relative z-10 flex-shrink-0">
+            {PrimaryAction}
+            
+            <button 
+                onClick={handleShare}
+                disabled={isGeneratingShare}
+                className="w-full bg-white/80 hover:bg-white active:scale-95 text-slate-700 font-bold py-3 px-8 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+            >
+                {isGeneratingShare ? <RefreshCw size={18} className="animate-spin"/> : <Share2 size={18} />}
+                {isGeneratingShare ? "生成中..." : "分享战绩"}
+            </button>
+
+            <button 
+                onClick={onReturn}
+                className="w-full bg-white/40 hover:bg-white/60 active:bg-white/70 active:scale-95 text-slate-800 font-bold py-3 px-8 rounded-xl backdrop-blur-sm border border-white/50 transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+                <Home size={18} />
+                返回选关
+            </button>
         </div>
       </div>
     );
