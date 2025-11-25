@@ -57,12 +57,16 @@ export const spawnEntity = (
 
   if (level.isEndless) {
       // Endless Scaling: Increase every 10 seconds
-      // Max cap at 3.0x difficulty after ~3 mins
-      const scalingFactor = Math.min(2.0, elapsedTimeSec / 60); 
+      // Starts at Normal difficulty (1.6 speed, 0.4 block), scales up
+      // Max cap at ~2.5x difficulty after ~3 mins
+      const scalingStep = Math.floor(elapsedTimeSec / 10);
       
-      difficultyMultiplier = 1 + (scalingFactor * 0.5); 
-      currentThiefChance = level.thiefChance + (scalingFactor * 0.02);
-      currentBlockadeChance = Math.min(0.8, level.blockadeChance + (scalingFactor * 0.3));
+      // Increase difficulty by 5% every 10 seconds
+      difficultyMultiplier = 1 + (scalingStep * 0.05); 
+      
+      // Increase spawn rates slightly every 10 seconds
+      currentThiefChance = level.thiefChance + (scalingStep * 0.002);
+      currentBlockadeChance = Math.min(0.85, level.blockadeChance + (scalingStep * 0.03));
   } else {
       // Normal Level Scaling
       const progressRatio = distanceTraveled / level.winDistance;
@@ -93,9 +97,9 @@ export const spawnEntity = (
   }
   
   if (shouldSpawnThief) {
-      // Endless mode gets more double spawns later on
+      // Endless mode gets more double spawns later on (every 30s chance increases)
       let doubleSpawnChance = 0.1;
-      if (level.isEndless) doubleSpawnChance = Math.min(0.6, elapsedTimeSec / 120);
+      if (level.isEndless) doubleSpawnChance = Math.min(0.7, elapsedTimeSec / 60);
       else doubleSpawnChance = level.id === 'HARD' ? 0.5 : (level.id === 'NORMAL' ? 0.3 : 0.1);
       
       const count = (Math.random() < doubleSpawnChance) ? 2 : 1;
@@ -138,8 +142,9 @@ export const spawnEntity = (
       const r = Math.random();
       
       if (level.isEndless) {
-          if (elapsedTimeSec > 60 && r > 0.7) numBlockers = 3;
-          if (elapsedTimeSec > 120 && r > 0.9) numBlockers = 4;
+          // Harder blockades earlier
+          if (elapsedTimeSec > 30 && r > 0.7) numBlockers = 3;
+          if (elapsedTimeSec > 80 && r > 0.9) numBlockers = 4;
       } else {
           if (level.id === 'HARD') {
               if (r > 0.6) numBlockers = 3;
