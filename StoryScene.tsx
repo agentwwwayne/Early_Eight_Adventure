@@ -1,5 +1,5 @@
 import React from 'react';
-import { Coffee, Clock, Zap, Bike, Sparkles, MapPin } from 'lucide-react';
+import { Coffee, Clock, Zap, Bike, Sparkles, MapPin, Cloud } from 'lucide-react';
 
 interface StorySceneProps {
   countdown: number;
@@ -139,7 +139,13 @@ export const StoryScene: React.FC<StorySceneProps> = ({ countdown }) => {
         <div className="absolute top-10 left-10 text-white/60 animate-[pulse_4s_infinite]"><Sparkles size={32}/></div>
         <div className="absolute top-20 right-10 text-white/40 animate-[pulse_5s_infinite]"><Sparkles size={24}/></div>
         
-        <ShopScene />
+        {/* Moving Clouds */}
+        <div className="absolute top-10 left-[-10%] text-white/80 animate-[slide-right_20s_linear_infinite]"><Cloud size={64} fill="currentColor"/></div>
+        <div className="absolute top-24 right-[-10%] text-white/60 animate-[slide-left_25s_linear_infinite]"><Cloud size={48} fill="currentColor"/></div>
+
+        <div className="scale-110 animate-[bounce-slow_3s_infinite]">
+            <ShopScene />
+        </div>
         
         <div className="relative z-20 mt-12 text-center bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white">
             <h2 className="text-2xl font-black text-slate-700 mb-1 flex items-center justify-center gap-2">
