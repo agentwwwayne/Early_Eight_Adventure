@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GameStatus, LevelConfig, Season } from '../types';
 import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun } from 'lucide-react';
 import { GAME_CONFIG, LEVELS, ENDLESS_LEVEL, RANKS, SEASON_STYLES } from '../constants';
@@ -119,8 +119,50 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       return bestRank;
   };
 
-  // STORY_INTRO is now fully handled by StoryScene component, 
-  // so GameOverlay doesn't need to render anything for it.
+  // Generate witty fail message based on progress
+  const getFailMessage = (progressPct: number, isEndless: boolean, baseCause: string) => {
+      if (isEndless) return baseCause; // Endless handles rank message separately
+
+      const failQuotesLow = [
+          "刚出门就翻车？这波操作有点迷... 🤔",
+          "还没热身就结束了？再试一次！💪",
+          "早高峰确实凶险，下次小心点！🚦"
+      ];
+      const failQuotesMid = [
+          "哎呀！只差亿点点运气，下次一定稳！🔥",
+          "手滑了一下？再来一把绝对能过！✨",
+          "可惜可惜！全勤奖离你只有一步之遥！💸"
+      ];
+      const failQuotesHigh = [
+          "啊啊啊！终点就在眼前！这能忍？再来一把！😡",
+          "就差最后几米！这不科学！🤯",
+          "我不服！这局必须赢回来！🚀"
+      ];
+
+      let quote = "";
+      if (progressPct < 20) quote = failQuotesLow[Math.floor(Math.random() * failQuotesLow.length)];
+      else if (progressPct < 80) quote = failQuotesMid[Math.floor(Math.random() * failQuotesMid.length)];
+      else quote = failQuotesHigh[Math.floor(Math.random() * failQuotesHigh.length)];
+
+      return (
+          <>
+            <span className="block mb-2 opacity-80 text-sm">{baseCause}</span>
+            <span className="block font-bold text-lg">{quote}</span>
+          </>
+      );
+  };
+
+  // Memoize the message so it doesn't change on rerender
+  const failMessage = useMemo(() => {
+      if (status === GameStatus.GAME_OVER) {
+          const isEndless = currentLevel?.isEndless || false;
+          return getFailMessage(progress, isEndless, causeOfDeath || "");
+      }
+      return null;
+  }, [status, progress, currentLevel, causeOfDeath]);
+
+
+  // STORY_INTRO handled by StoryScene
   if (status === GameStatus.STORY_INTRO) {
       return null;
   }
@@ -224,7 +266,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       );
   }
 
-  // ... (Start, Game Over, Victory remain unchanged)
+  // ... START SCREEN (Unchanged) ...
   if (status === GameStatus.START) {
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
@@ -378,7 +420,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     const isEndless = currentLevel?.isEndless;
     
     let title = "通勤失败";
-    let description = causeOfDeath;
+    let description = null; // Changed from string to ReactNode to support JSX
     
     // --- HIGH EMOTION LIGHT GRADIENTS ---
     let bgTheme = "bg-gradient-to-br from-slate-200 to-slate-300"; 
@@ -393,7 +435,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
 
     if (isWin) {
       title = "打卡成功！";
-      // Victory: Golden Sunlight / Mint Freshness (Stronger joy)
       bgTheme = "bg-gradient-to-br from-emerald-100 via-yellow-100 to-orange-100"; 
       iconBg = "bg-yellow-400";
       MainIcon = Trophy;
@@ -406,19 +447,24 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         description = "汪汪在8:30前安全抵达了公司，保住了这个月的全勤奖！";
       }
     } else if (isEndless) {
-        // Endless: Dreamy Purple
         title = "摸鱼结束";
         bgTheme = "bg-gradient-to-br from-violet-100 to-fuchsia-100";
         const rank = getRank(survivalTime);
-        description = rank.message;
+        description = (
+            <>
+                <span className="block mb-2 opacity-80 text-sm">你已经很努力了...</span>
+                <span className="block font-bold text-lg text-purple-900">{rank.message}</span>
+            </>
+        );
         MainIcon = Award;
         iconBg = "bg-purple-500";
         textColor = "text-purple-900";
     } else {
-        // Normal Game Over
+        // Dynamic fail message for normal levels
+        description = failMessage; 
+
         if (isStolen) {
             title = "手机被偷啦！";
-            // Stolen: Deep Blue / Grey (Sadness, cold)
             bgTheme = "bg-gradient-to-br from-indigo-100 to-slate-200"; 
             iconBg = "bg-indigo-500";
             MainIcon = Smartphone; 
@@ -426,13 +472,11 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             subTextColor = "text-slate-600";
         } else if (isCrash) {
             title = "撞到车啦！";
-            // Crash: Red / Orange (Alarming, hot)
             bgTheme = "bg-gradient-to-br from-red-100 to-orange-200"; 
             iconBg = "bg-red-500";
             MainIcon = AlertTriangle;
             textColor = "text-red-900";
             subTextColor = "text-red-700";
-            // Add shake effect for crash
             overlayAnim += " animate-[shake_0.5s_ease-in-out]"; 
         }
     }
@@ -477,7 +521,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     return (
       <div className={`absolute inset-0 ${bgTheme} z-50 flex flex-col items-center justify-center p-6 text-center ${overlayAnim}`}>
         
-        {/* Background Elements for Emotion */}
         {isCrash && (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent animate-pulse pointer-events-none"></div>
         )}
@@ -492,7 +535,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
              <div className={`p-6 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin ? 'animate-bounce' : 'animate-pulse'}`}>
                 <MainIcon size={64} className="text-white drop-shadow-md" />
              </div>
-             {/* Emotes */}
              {isStolen && <div className="absolute -top-4 -right-4 text-5xl animate-bounce delay-100">😭</div>}
              {isCrash && <div className="absolute -top-4 -left-4 text-5xl animate-spin-slow">😵‍💫</div>}
              {isWin && <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">🥳</div>}
@@ -509,9 +551,9 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             </div>
         )}
 
-        <p className={`text-lg ${subTextColor} mb-8 font-medium px-4 leading-relaxed max-w-xs`}>
+        <div className={`text-lg ${subTextColor} mb-8 font-medium px-4 leading-relaxed max-w-xs`}>
             {description}
-        </p>
+        </div>
 
         <div className="grid grid-cols-2 gap-4 w-full max-w-xs mb-8">
            <div className="bg-white/60 p-4 rounded-2xl backdrop-blur-md border border-white/40 shadow-sm">
