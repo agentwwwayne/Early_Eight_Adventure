@@ -47,39 +47,57 @@ export const spawnEntity = (
   distanceTraveled: number, 
   playerY: number, 
   thievesSpawnedSoFar: number,
-  level: LevelConfig // NEW: Accept level config
+  level: LevelConfig,
+  elapsedTimeSec: number = 0 // New param for endless scaling
 ): Entity[] => {
   
-  // Difficulty scaling based on distance within the level
-  const progressRatio = distanceTraveled / level.winDistance;
-  const difficultyMultiplier = 1 + (progressRatio * 0.2); // Speed increases up to 20%
+  let difficultyMultiplier = 1;
+  let currentThiefChance = level.thiefChance;
+  let currentBlockadeChance = level.blockadeChance;
+
+  if (level.isEndless) {
+      // Endless Scaling: Increase every 10 seconds
+      // Max cap at 3.0x difficulty after ~3 mins
+      const scalingFactor = Math.min(2.0, elapsedTimeSec / 60); 
+      
+      difficultyMultiplier = 1 + (scalingFactor * 0.5); 
+      currentThiefChance = level.thiefChance + (scalingFactor * 0.02);
+      currentBlockadeChance = Math.min(0.8, level.blockadeChance + (scalingFactor * 0.3));
+  } else {
+      // Normal Level Scaling
+      const progressRatio = distanceTraveled / level.winDistance;
+      difficultyMultiplier = 1 + (progressRatio * 0.2);
+      currentThiefChance = distanceTraveled > 20 ? level.thiefChance + (progressRatio * 0.01) : 0;
+      currentBlockadeChance = Math.min(0.7, level.blockadeChance + (progressRatio * 0.1));
+  }
   
   const newEntities: Entity[] = [];
   const lanes = [0, 1, 2, 3, 4];
   
-  // 1. Thief Spawning Logic (Based on Level Config)
+  // 1. Thief Spawning Logic
   let shouldSpawnThief = false;
   
-  // Random Chance scaled by Level
-  // e.g. Easy: 0.015, Hard: 0.04
-  const currentThiefChance = distanceTraveled > 20 ? level.thiefChance + (progressRatio * 0.01) : 0;
   if (Math.random() < currentThiefChance) {
       shouldSpawnThief = true;
   }
 
-  // GUARANTEE MECHANISM:
-  // Distributed based on level.minThieves
-  const checkPoint1 = level.winDistance * 0.33;
-  const checkPoint2 = level.winDistance * 0.66;
-  const checkPoint3 = level.winDistance * 0.85;
+  // Guarantee logic mostly for normal levels
+  if (!level.isEndless) {
+      const checkPoint1 = level.winDistance * 0.33;
+      const checkPoint2 = level.winDistance * 0.66;
+      const checkPoint3 = level.winDistance * 0.85;
 
-  if (distanceTraveled > checkPoint1 && thievesSpawnedSoFar < Math.ceil(level.minThieves * 0.3)) shouldSpawnThief = true;
-  if (distanceTraveled > checkPoint2 && thievesSpawnedSoFar < Math.ceil(level.minThieves * 0.6)) shouldSpawnThief = true;
-  if (distanceTraveled > checkPoint3 && thievesSpawnedSoFar < level.minThieves) shouldSpawnThief = true;
+      if (distanceTraveled > checkPoint1 && thievesSpawnedSoFar < Math.ceil(level.minThieves * 0.3)) shouldSpawnThief = true;
+      if (distanceTraveled > checkPoint2 && thievesSpawnedSoFar < Math.ceil(level.minThieves * 0.6)) shouldSpawnThief = true;
+      if (distanceTraveled > checkPoint3 && thievesSpawnedSoFar < level.minThieves) shouldSpawnThief = true;
+  }
   
   if (shouldSpawnThief) {
-      // In hard mode, higher chance of double spawn
-      const doubleSpawnChance = level.id === 'HARD' ? 0.5 : (level.id === 'NORMAL' ? 0.3 : 0.1);
+      // Endless mode gets more double spawns later on
+      let doubleSpawnChance = 0.1;
+      if (level.isEndless) doubleSpawnChance = Math.min(0.6, elapsedTimeSec / 120);
+      else doubleSpawnChance = level.id === 'HARD' ? 0.5 : (level.id === 'NORMAL' ? 0.3 : 0.1);
+      
       const count = (Math.random() < doubleSpawnChance) ? 2 : 1;
 
       for (let i = 0; i < count; i++) {
@@ -92,8 +110,7 @@ export const spawnEntity = (
             type: EntityType.THIEF,
             lane: startLane, 
             y: spawnY,
-            // Harder levels have faster thieves
-            speed: ENTITY_CONFIG[EntityType.THIEF].speed * (1 + (level.id === 'HARD' ? 0.5 : 0.2)), 
+            speed: ENTITY_CONFIG[EntityType.THIEF].speed * (difficultyMultiplier + (level.id === 'HARD' ? 0.2 : 0)), 
             width: ENTITY_CONFIG[EntityType.THIEF].width,
             height: ENTITY_CONFIG[EntityType.THIEF].height,
             isTargeting: true, 
@@ -115,20 +132,21 @@ export const spawnEntity = (
       return newEntities;
   }
 
-  // Traffic Blockades (Based on Level Config)
-  // Harder levels have higher blockade chance and density
-  const currentBlockadeChance = Math.min(0.7, level.blockadeChance + (progressRatio * 0.1));
-  
+  // Traffic Blockades
   if (Math.random() < currentBlockadeChance) {
       let numBlockers = 2; 
-      
       const r = Math.random();
-      // Hard mode has chance for 3 or 4 cars
-      if (level.id === 'HARD') {
-          if (r > 0.6) numBlockers = 3;
-          if (r > 0.9) numBlockers = 4;
-      } else if (level.id === 'NORMAL') {
-          if (r > 0.8) numBlockers = 3;
+      
+      if (level.isEndless) {
+          if (elapsedTimeSec > 60 && r > 0.7) numBlockers = 3;
+          if (elapsedTimeSec > 120 && r > 0.9) numBlockers = 4;
+      } else {
+          if (level.id === 'HARD') {
+              if (r > 0.6) numBlockers = 3;
+              if (r > 0.9) numBlockers = 4;
+          } else if (level.id === 'NORMAL') {
+              if (r > 0.8) numBlockers = 3;
+          }
       }
 
       const shuffledLanes = [...lanes].sort(() => 0.5 - Math.random());

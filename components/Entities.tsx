@@ -1,6 +1,6 @@
 import React from 'react';
-import { Entity, EntityType, PlayerState } from '../types';
-import { ENTITY_CONFIG, getLaneCenter, GAME_CONFIG } from '../constants';
+import { Entity, EntityType, PlayerState, Season } from '../types';
+import { ENTITY_CONFIG, getLaneCenter, GAME_CONFIG, SEASON_STYLES } from '../constants';
 import { Smartphone, Shield, Zap, Bike } from 'lucide-react';
 
 // --- Custom Graphics ---
@@ -12,29 +12,37 @@ const PlayerGraphic = ({ hasShield, isInvulnerable }: { hasShield: boolean, isIn
        <div className="absolute inset-[-10px] rounded-full border-2 border-cyan-300 bg-cyan-300/20 animate-pulse shadow-[0_0_10px_rgba(103,232,249,0.5)]" />
      )}
 
-    <svg viewBox="0 0 40 60" className="w-full h-full drop-shadow-xl overflow-visible">
-        {/* Bike Body */}
-        <rect x="19" y="5" width="2" height="50" rx="1" fill="#64748b" /> 
-        <rect x="15" y="52" width="10" height="3" rx="1" fill="#1e293b" /> {/* Rear Wheel Hub */}
-        <rect x="12" y="6" width="16" height="2" rx="1" fill="#1e293b" /> {/* Front Handlebar */}
+    <svg viewBox="0 0 60 80" className="w-full h-full drop-shadow-xl overflow-visible">
+        {/* Bike Body (Frame) */}
+        <path d="M28,15 L28,70" stroke="#cbd5e1" strokeWidth="3" strokeLinecap="round" />
+        <rect x="24" y="70" width="8" height="4" rx="2" fill="#334155" /> {/* Rear Hub */}
+        <path d="M15,20 L45,20" stroke="#334155" strokeWidth="3" strokeLinecap="round" /> {/* Handlebars */}
         
-        {/* Rider Helmet */}
-        <circle cx="20" cy="28" r="8" fill="#fcd34d" stroke="#f59e0b" strokeWidth="1.5" /> 
+        {/* Pigtails (Hair) */}
+        <path d="M20,30 Q10,35 12,50" stroke="#fcd34d" strokeWidth="5" strokeLinecap="round" fill="none" />
+        <path d="M40,30 Q50,35 48,50" stroke="#fcd34d" strokeWidth="5" strokeLinecap="round" fill="none" />
+
+        {/* Rider Body (Dress/Shirt) */}
+        <ellipse cx="30" cy="50" rx="10" ry="9" fill="#f472b6" /> {/* Pink Shirt */}
         
-        {/* Rider Body */}
-        <ellipse cx="20" cy="40" rx="8" ry="7" fill="#0ea5e9" /> 
+        {/* Backpack */}
+        <rect x="24" y="52" width="12" height="10" rx="2" fill="#be185d" />
         
         {/* Arms */}
-        <path d="M13,38 Q10,25 12,10" stroke="#0ea5e9" strokeWidth="3" fill="none" strokeLinecap="round"/>
-        <path d="M27,38 Q30,25 28,10" stroke="#0ea5e9" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <path d="M22,48 Q18,35 18,22" stroke="#f472b6" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+        <path d="M38,48 Q42,35 42,22" stroke="#f472b6" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
         
+        {/* Helmet */}
+        <circle cx="30" cy="30" r="11" fill="#f9a8d4" stroke="#db2777" strokeWidth="2" /> 
+        <path d="M24,26 L36,26" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+
         {/* Phone on Handlebar */}
-        <rect x="18" y="8" width="4" height="6" rx="1" fill="#fff" stroke="#333" strokeWidth="0.5" className="animate-pulse" />
+        <rect x="27" y="16" width="6" height="8" rx="1" fill="#fff" stroke="#333" strokeWidth="0.5" className="animate-pulse" />
     </svg>
   </div>
 );
 
-const CarGraphic = () => (
+const CarGraphic = ({ color }: { color: string }) => (
   <svg viewBox="0 0 60 90" className="w-full h-full drop-shadow-lg overflow-visible">
     {/* Wheels */}
     <rect x="2" y="12" width="6" height="12" rx="2" fill="#1e293b" />
@@ -43,11 +51,11 @@ const CarGraphic = () => (
     <rect x="52" y="66" width="6" height="12" rx="2" fill="#1e293b" />
     
     {/* Chassis */}
-    <path d="M8,10 Q8,0 30,0 Q52,0 52,10 L52,80 Q52,90 30,90 Q8,90 8,80 Z" fill="#38bdf8" /> 
+    <path d="M8,10 Q8,0 30,0 Q52,0 52,10 L52,80 Q52,90 30,90 Q8,90 8,80 Z" fill={color} /> 
     
     {/* Roof / Cabin */}
     <rect x="10" y="25" width="40" height="40" rx="5" fill="#0c4a6e" opacity="0.8" /> 
-    <rect x="12" y="30" width="36" height="30" rx="3" fill="#bae6fd" /> 
+    <rect x="12" y="30" width="36" height="30" rx="3" fill="#e2e8f0" opacity="0.5" /> 
     
     {/* Windshield Reflections */}
     <path d="M12,28 L48,28 L46,30 L14,30 Z" fill="#e0f2fe" opacity="0.5" />
@@ -61,20 +69,20 @@ const CarGraphic = () => (
   </svg>
 );
 
-const BusGraphic = () => (
+const BusGraphic = ({ color }: { color: string }) => (
   <svg viewBox="0 0 60 110" className="w-full h-full drop-shadow-xl overflow-visible">
      {/* Body */}
-    <rect x="4" y="0" width="52" height="110" rx="4" fill="#fb923c" stroke="#c2410c" strokeWidth="2" />
+    <rect x="4" y="0" width="52" height="110" rx="4" fill={color} stroke="rgba(0,0,0,0.1)" strokeWidth="2" />
     
     {/* Windshield */}
     <rect x="6" y="4" width="48" height="18" rx="2" fill="#bfdbfe" />
     
     {/* Vents/Details */}
-    <rect x="15" y="95" width="30" height="10" rx="1" fill="#7c2d12" opacity="0.3" />
+    <rect x="15" y="95" width="30" height="10" rx="1" fill="rgba(0,0,0,0.2)" />
     
     {/* Mirrors */}
-    <rect x="0" y="10" width="4" height="8" rx="1" fill="#fb923c" />
-    <rect x="56" y="10" width="4" height="8" rx="1" fill="#fb923c" />
+    <rect x="0" y="10" width="4" height="8" rx="1" fill={color} />
+    <rect x="56" y="10" width="4" height="8" rx="1" fill={color} />
     
     {/* Roof Pattern */}
     <line x1="10" y1="30" x2="50" y2="30" stroke="#fff" strokeWidth="1" opacity="0.5" />
@@ -98,7 +106,7 @@ const ThiefGraphic = () => (
     <circle cx="25" cy="25" r="9" fill="#e11d48" stroke="#881337" strokeWidth="2" />
     <path d="M22,22 L28,22" stroke="#fecdd3" strokeWidth="2" strokeLinecap="round" /> {/* Goggles */}
     
-    {/* Arms Reaching out (The key visual for thief) */}
+    {/* Arms Reaching out */}
     <path d="M15,35 Q10,25 12,15" stroke="#9f1239" strokeWidth="3" fill="none" strokeLinecap="round" />
     <path d="M35,35 Q40,25 38,15" stroke="#9f1239" strokeWidth="3" fill="none" strokeLinecap="round" />
     
@@ -109,13 +117,12 @@ const ThiefGraphic = () => (
 
 // --- Main Components ---
 
-export const Player: React.FC<{ player: PlayerState }> = ({ player }) => {
+export const Player: React.FC<{ player: PlayerState; isTouchMode?: boolean }> = ({ player, isTouchMode = false }) => {
   const xPos = getLaneCenter(player.lane);
   
   return (
     <div 
-      // Use Tailwind classes for transform to be safe and consistent
-      className="absolute z-10 transition-all duration-200 ease-out -translate-x-1/2 -translate-y-1/2"
+      className={`absolute z-10 ease-out -translate-x-1/2 -translate-y-1/2 ${isTouchMode ? 'transition-none duration-0' : 'transition-all duration-200'}`}
       style={{
         left: `${xPos}%`,
         top: `${player.y}%`,
@@ -128,9 +135,10 @@ export const Player: React.FC<{ player: PlayerState }> = ({ player }) => {
   );
 };
 
-export const GameEntity: React.FC<{ entity: Entity }> = ({ entity }) => {
+export const GameEntity: React.FC<{ entity: Entity; season: Season }> = ({ entity, season }) => {
   const config = ENTITY_CONFIG[entity.type];
   const xPos = getLaneCenter(entity.lane);
+  const seasonStyle = SEASON_STYLES[season];
   
   const isThief = entity.type === EntityType.THIEF;
   
@@ -147,15 +155,21 @@ export const GameEntity: React.FC<{ entity: Entity }> = ({ entity }) => {
 
   let Content = <div />;
 
+  // Generate random color based on ID to keep it consistent per entity
+  const getColor = (palette: string[]) => {
+      const index = Math.floor(entity.id) % palette.length;
+      return palette[index];
+  };
+
   switch (entity.type) {
     case EntityType.BUS: 
-        Content = <BusGraphic />; 
+        Content = <BusGraphic color={getColor(seasonStyle.busPalette)} />; 
         break;
     case EntityType.THIEF: 
         Content = <ThiefGraphic />; 
         break;
     case EntityType.CAR: 
-        Content = <CarGraphic />; 
+        Content = <CarGraphic color={getColor(seasonStyle.carPalette)} />; 
         break;
     default:
         // Items
@@ -174,9 +188,6 @@ export const GameEntity: React.FC<{ entity: Entity }> = ({ entity }) => {
 
   return (
     <div
-      // Fix: Use Tailwind utilities for transform. 
-      // -translate-x-1/2 -translate-y-1/2 handles centering.
-      // ${rotation} adds rotation if needed.
       className={`absolute transition-transform duration-100 linear -translate-x-1/2 -translate-y-1/2 ${rotation} ${isThief ? `z-20` : 'z-0'}`}
       style={{
         left: `${xPos}%`,

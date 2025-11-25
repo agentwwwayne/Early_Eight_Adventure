@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GameStatus, Entity, PlayerState, EntityType, LevelConfig } from './types';
-import { GAME_CONFIG, ENTITY_CONFIG, LEVELS } from './constants';
+import { GameStatus, Entity, PlayerState, EntityType, LevelConfig, Season } from './types';
+import { GAME_CONFIG, ENTITY_CONFIG, LEVELS, ENDLESS_LEVEL, SEASONS_ORDER } from './constants';
 import { checkCollision, spawnEntity, updateThiefLogic } from './services/gameEngine';
 import { Road } from './components/Road';
 import { Player, GameEntity } from './components/Entities';
@@ -15,6 +15,10 @@ const App: React.FC = () => {
   const [deathReason, setDeathReason] = useState<string>('');
   const [gameTimeStr, setGameTimeStr] = useState("08:00");
   const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(null);
+  const [survivalTime, setSurvivalTime] = useState(0); 
+  const [currentSeason, setCurrentSeason] = useState<Season>(Season.SPRING);
+  
+  const [isTouchMode, setIsTouchMode] = useState(false);
   
   const [player, setPlayer] = useState<PlayerState>({
     lane: 2, 
@@ -27,11 +31,12 @@ const App: React.FC = () => {
   const [entities, setEntities] = useState<Entity[]>([]);
 
   // --- Refs (Game Logic Stability) ---
-  const containerRef = useRef<HTMLDivElement>(null); // Reference to game container for touch calculation
+  const containerRef = useRef<HTMLDivElement>(null); 
   const statusRef = useRef<GameStatus>(GameStatus.START);
   const playerRef = useRef<PlayerState>(player);
   const distanceRef = useRef(0);
   const currentLevelRef = useRef<LevelConfig | null>(null); 
+  const currentSeasonRef = useRef<Season>(Season.SPRING);
   
   const thievesSpawnedRef = useRef(0);
   
@@ -39,10 +44,15 @@ const App: React.FC = () => {
   const lastTimeRef = useRef<number>(0);
   const spawnTimerRef = useRef<number>(0);
   const lastInputTimeRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(0); 
+  // To handle pause correctly, we need to adjust start time
+  const pauseStartTimeRef = useRef<number>(0);
+  const totalPausedTimeRef = useRef<number>(0);
 
   // Sync Status & Level Effect
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
+  useEffect(() => { currentSeasonRef.current = currentSeason; }, [currentSeason]);
 
   const updateGameTime = useCallback((currentDist: number, level: LevelConfig) => {
     const startTotalMins = level.startHour * 60 + level.startMinute;
@@ -61,9 +71,29 @@ const App: React.FC = () => {
     setGameTimeStr(`0${hour}:${minStr}`);
   }, []);
 
+  const pauseGame = useCallback(() => {
+      if (statusRef.current !== GameStatus.PLAYING) return;
+      setStatus(GameStatus.PAUSED);
+      statusRef.current = GameStatus.PAUSED;
+      pauseStartTimeRef.current = performance.now();
+  }, []);
+
+  const resumeGame = useCallback(() => {
+      if (statusRef.current !== GameStatus.PAUSED) return;
+      const now = performance.now();
+      const pausedDuration = now - pauseStartTimeRef.current;
+      totalPausedTimeRef.current += pausedDuration;
+      
+      setStatus(GameStatus.PLAYING);
+      statusRef.current = GameStatus.PLAYING;
+      lastTimeRef.current = now; 
+  }, []);
+
   // --- Keyboard Controls (Discrete) ---
   const handleKeyboardInput = useCallback((direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN') => {
     if (statusRef.current !== GameStatus.PLAYING) return;
+
+    setIsTouchMode(false);
 
     const now = Date.now();
     if (now - lastInputTimeRef.current < GAME_CONFIG.INPUT_COOLDOWN_MS) {
@@ -75,11 +105,13 @@ const App: React.FC = () => {
       let newLane = prev.lane;
       let newY = prev.y;
 
-      if (direction === 'LEFT') newLane = Math.max(0, prev.lane - 1);
-      if (direction === 'RIGHT') newLane = Math.min(4, prev.lane + 1);
+      if (direction === 'LEFT') newLane = Math.max(0, Math.floor(prev.lane) - 1);
+      if (direction === 'RIGHT') newLane = Math.min(4, Math.ceil(prev.lane) + 1);
       
       if (direction === 'UP') newY = Math.max(GAME_CONFIG.PLAYER_MIN_Y, prev.y - GAME_CONFIG.PLAYER_Y_STEP);
       if (direction === 'DOWN') newY = Math.min(GAME_CONFIG.PLAYER_MAX_Y, prev.y + GAME_CONFIG.PLAYER_Y_STEP);
+
+      newLane = Math.round(newLane);
 
       const newState = { ...prev, lane: newLane, y: newY };
       playerRef.current = newState; 
@@ -89,6 +121,16 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+          e.preventDefault();
+          if (statusRef.current === GameStatus.PLAYING) {
+              pauseGame();
+          } else if (statusRef.current === GameStatus.PAUSED) {
+              resumeGame();
+          }
+          return;
+      }
+
       if (e.key === 'ArrowLeft' || e.key === 'a') handleKeyboardInput('LEFT');
       if (e.key === 'ArrowRight' || e.key === 'd') handleKeyboardInput('RIGHT');
       if (e.key === 'ArrowUp' || e.key === 'w') handleKeyboardInput('UP');
@@ -101,7 +143,8 @@ const App: React.FC = () => {
     const handleTouch = (e: TouchEvent) => {
         if (statusRef.current !== GameStatus.PLAYING) return;
         
-        // Prevent default only if we are inside the game area interactions
+        setIsTouchMode(true);
+
         if (e.cancelable && e.target === containerRef.current) e.preventDefault();
         
         const container = containerRef.current;
@@ -110,26 +153,17 @@ const App: React.FC = () => {
         const touch = e.touches[0];
         const rect = container.getBoundingClientRect();
         
-        // 1. Calculate Horizontal Lane (0-4)
-        // Map touch X relative to container width to 5 distinct zones
         const relativeX = touch.clientX - rect.left;
-        // Clamp X within container bounds for calculation
         const clampedX = Math.max(0, Math.min(rect.width, relativeX));
-        const laneWidth = rect.width / 5;
-        const targetLane = Math.floor(clampedX / laneWidth);
+        const percentageX = (clampedX / rect.width) * 100;
+        let targetLane = (percentageX - 10) / 20;
+        targetLane = Math.max(0, Math.min(4, targetLane));
         
-        // 2. Calculate Vertical Y (0-100%)
         const relativeY = touch.clientY - rect.top;
         const yPercent = (relativeY / rect.height) * 100;
         const clampedY = Math.max(GAME_CONFIG.PLAYER_MIN_Y, Math.min(GAME_CONFIG.PLAYER_MAX_Y, yPercent));
         
-        // Direct Update (Bypass cooldown for 1:1 feel)
         setPlayer(prev => {
-            // Only update if changed to avoid excessive re-renders (React handles this mostly, but good practice)
-            if (prev.lane === targetLane && Math.abs(prev.y - clampedY) < 0.5) {
-                return prev; 
-            }
-            
             const newState = { ...prev, lane: targetLane, y: clampedY };
             playerRef.current = newState;
             return newState;
@@ -138,7 +172,6 @@ const App: React.FC = () => {
 
     const container = containerRef.current;
     if (container) {
-        // Use non-passive to allow preventing scroll
         container.addEventListener('touchstart', handleTouch, { passive: false });
         container.addEventListener('touchmove', handleTouch, { passive: false });
     }
@@ -150,10 +183,17 @@ const App: React.FC = () => {
           container.removeEventListener('touchmove', handleTouch);
       }
     };
-  }, [handleKeyboardInput]);
+  }, [handleKeyboardInput, pauseGame, resumeGame]);
 
   // --- Game Loop ---
   const loop = useCallback((time: number) => {
+    // If paused, just keep looping but update lastTime so we don't have huge jump on resume
+    if (statusRef.current === GameStatus.PAUSED) {
+        lastTimeRef.current = time;
+        requestRef.current = requestAnimationFrame(loop);
+        return;
+    }
+
     if (statusRef.current !== GameStatus.PLAYING) {
         lastTimeRef.current = time;
         requestRef.current = requestAnimationFrame(loop);
@@ -168,35 +208,77 @@ const App: React.FC = () => {
     const deltaTime = time - lastTimeRef.current;
     lastTimeRef.current = time;
 
+    // Update Survival Time for Endless Mode & Cycle Seasons
+    // Adjust for total paused time
+    const actualElapsedTime = time - startTimeRef.current - totalPausedTimeRef.current;
+    
+    if (activeLevel.isEndless) {
+        const elapsedSeconds = actualElapsedTime / 1000;
+        setSurvivalTime(elapsedSeconds);
+        
+        // Cycle season every 20 seconds
+        const seasonIndex = Math.floor(elapsedSeconds / 20) % 4;
+        if (SEASONS_ORDER[seasonIndex] !== currentSeasonRef.current) {
+            const nextSeason = SEASONS_ORDER[seasonIndex];
+            setCurrentSeason(nextSeason);
+            currentSeasonRef.current = nextSeason;
+        }
+    }
+
     const currentPlayer = playerRef.current;
     const currentDistance = distanceRef.current;
 
-    const speed = (activeLevel.baseSpeed * currentPlayer.speedMultiplier * deltaTime) / 1000; 
+    // Speed Calculation
+    let currentBaseSpeed = activeLevel.baseSpeed;
+    if (activeLevel.isEndless) {
+        const elapsedSec = actualElapsedTime / 1000;
+        currentBaseSpeed += Math.min(1.0, elapsedSec / 120); 
+    }
+
+    const speed = (currentBaseSpeed * currentPlayer.speedMultiplier * deltaTime) / 1000; 
     
     setDistance(prev => {
         const newDist = prev + speed * 10; 
         distanceRef.current = newDist; 
-        updateGameTime(newDist, activeLevel);
         
-        if (newDist >= activeLevel.winDistance) {
-            setStatus(GameStatus.VICTORY);
-            statusRef.current = GameStatus.VICTORY;
+        if (!activeLevel.isEndless) {
+            updateGameTime(newDist, activeLevel);
+            
+            if (newDist >= activeLevel.winDistance) {
+                setStatus(GameStatus.VICTORY);
+                statusRef.current = GameStatus.VICTORY;
+            }
         }
         return newDist;
     });
-    setScore(prev => prev + speed);
+    
+    if (!activeLevel.isEndless) {
+        setScore(prev => prev + speed);
+    } else {
+        setScore(Math.floor(actualElapsedTime / 100)); 
+    }
 
     spawnTimerRef.current += deltaTime;
-    const currentSpawnRate = Math.max(400, activeLevel.spawnRateMs - (currentDistance / 2)); 
+    
+    let currentSpawnRate = activeLevel.spawnRateMs;
+    if (activeLevel.isEndless) {
+        const elapsedSec = actualElapsedTime / 1000;
+        currentSpawnRate = Math.max(400, 1000 - (elapsedSec * 5)); 
+    } else {
+        currentSpawnRate = Math.max(400, activeLevel.spawnRateMs - (currentDistance / 2)); 
+    }
     
     if (spawnTimerRef.current > currentSpawnRate) {
       setEntities(prev => {
+        const elapsedTimeSec = activeLevel.isEndless ? actualElapsedTime / 1000 : 0;
+        
         const newSpawnedEntities = spawnEntity(
             prev, 
             currentDistance, 
             currentPlayer.y, 
             thievesSpawnedRef.current,
-            activeLevel
+            activeLevel,
+            elapsedTimeSec
         );
         
         const thiefCount = newSpawnedEntities.filter(e => e.type === EntityType.THIEF).length;
@@ -220,7 +302,7 @@ const App: React.FC = () => {
         if (entity.type === EntityType.THIEF) {
              processedEntity = updateThiefLogic(processedEntity, currentPlayer, deltaTime);
         } else {
-             const moveSpeed = (activeLevel.baseSpeed * 0.8 * deltaTime) / 16; 
+             const moveSpeed = (currentBaseSpeed * 0.8 * deltaTime) / 16; 
              processedEntity.y += moveSpeed;
         }
 
@@ -241,7 +323,6 @@ const App: React.FC = () => {
         const entity = collisionEntity;
         
         if (entity.type === EntityType.COIN) {
-            setScore(s => s + ENTITY_CONFIG[EntityType.COIN].score);
             setPlayer(p => {
                 const np = { ...p, phoneCount: p.phoneCount + 1 };
                 playerRef.current = np;
@@ -298,7 +379,6 @@ const App: React.FC = () => {
                     }, 1000);
                     return nextEntities.filter(e => e.id !== entity.id);
                 } else {
-                    // Update: Explicitly set phones to 0 for UI correct display
                     setPlayer(p => {
                         const np = { ...p, phoneCount: 0 };
                         playerRef.current = np;
@@ -333,10 +413,18 @@ const App: React.FC = () => {
     setCurrentLevel(level);
     currentLevelRef.current = level;
     
+    // Pick random season for non-endless, or Spring for endless start
+    let startingSeason = SEASONS_ORDER[Math.floor(Math.random() * 4)];
+    if (level.isEndless) startingSeason = Season.SPRING;
+    
+    setCurrentSeason(startingSeason);
+    currentSeasonRef.current = startingSeason;
+    
     setScore(0);
     setDistance(0);
     distanceRef.current = 0;
     thievesSpawnedRef.current = 0; 
+    setSurvivalTime(0);
     
     const minStr = level.startMinute < 10 ? `0${level.startMinute}` : `${level.startMinute}`;
     setGameTimeStr(`0${level.startHour}:${minStr}`);
@@ -353,39 +441,60 @@ const App: React.FC = () => {
     };
     setPlayer(initialPlayer);
     playerRef.current = initialPlayer;
+    setIsTouchMode(false); 
     
     setDeathReason('');
     setStatus(GameStatus.PLAYING);
     statusRef.current = GameStatus.PLAYING; 
     
     lastTimeRef.current = performance.now();
+    startTimeRef.current = lastTimeRef.current;
+    totalPausedTimeRef.current = 0;
   };
 
-  const restartGame = () => {
+  const restartLevel = () => {
+      if (currentLevel) {
+          startGame(currentLevel);
+      } else {
+          returnToMenu();
+      }
+  };
+
+  const nextLevel = () => {
+      if (!currentLevel) return;
+      
+      const idx = LEVELS.findIndex(l => l.id === currentLevel.id);
+      if (idx >= 0 && idx < LEVELS.length - 1) {
+          startGame(LEVELS[idx + 1]);
+      } else {
+          // Already at hard, or endless
+          startGame(ENDLESS_LEVEL);
+      }
+  };
+
+  const returnToMenu = () => {
       setStatus(GameStatus.START);
       statusRef.current = GameStatus.START;
       setCurrentLevel(null); 
   };
 
   return (
-    // BG set to neutral-900 for letterboxing effect on large screens
     <div className="relative w-full h-screen bg-neutral-900 flex justify-center items-center overflow-hidden touch-none">
       <div 
         ref={containerRef}
-        // MD: Limit max width to resemble a phone, but allow height to fill freely up to 95vh for "auto aspect"
-        // Mobile: w-full h-full
         className="relative w-full h-full md:w-auto md:max-w-[450px] md:h-[95vh] md:rounded-3xl md:border-[8px] md:border-neutral-800 bg-slate-200 shadow-2xl overflow-hidden touch-none"
       >
         <Road 
             speed={player.speedMultiplier * (currentLevel ? (currentLevel.baseSpeed / 1.5) : 1)} 
             isMoving={status === GameStatus.PLAYING} 
+            season={currentSeason}
         />
         
         {entities.map(entity => (
-            <GameEntity key={entity.id} entity={entity} />
+            <GameEntity key={entity.id} entity={entity} season={currentSeason} />
         ))}
 
-        <Player player={player} />
+        <Player player={player} isTouchMode={isTouchMode} />
 
         <GameOverlay 
             status={status} 
@@ -393,16 +502,22 @@ const App: React.FC = () => {
             distance={distance}
             highScore={highScore}
             onStart={startGame}
-            onRestart={restartGame}
+            onRetry={restartLevel}
+            onReturn={returnToMenu}
+            onNextLevel={nextLevel}
+            onPause={pauseGame}
+            onResume={resumeGame}
             causeOfDeath={deathReason}
             gameTimeStr={gameTimeStr}
             phoneCount={player.phoneCount}
             currentLevel={currentLevel}
+            survivalTime={survivalTime}
+            currentSeason={currentSeason}
         />
 
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50">
-               Ver 3.3.1 More Dynamic Fun
+               Ver 6.1.0 Pause Theme
             </div>
         )}
       </div>

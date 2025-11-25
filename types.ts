@@ -1,6 +1,7 @@
 export enum GameStatus {
   START = 'START',
   PLAYING = 'PLAYING',
+  PAUSED = 'PAUSED', // New status
   GAME_OVER = 'GAME_OVER',
   VICTORY = 'VICTORY',
 }
@@ -20,6 +21,13 @@ export enum Lane {
   L3 = 2,
   L4 = 3,
   L5 = 4,
+}
+
+export enum Season {
+  SPRING = 'SPRING',
+  SUMMER = 'SUMMER',
+  AUTUMN = 'AUTUMN',
+  WINTER = 'WINTER',
 }
 
 export interface Entity {
@@ -49,7 +57,6 @@ export interface GameConfig {
   baseSpeed: number;
 }
 
-// --- New Level Types ---
 export interface LevelConfig {
   id: string;
   name: string;
@@ -61,6 +68,22 @@ export interface LevelConfig {
   blockadeChance: number;   // Traffic jam probability
   startHour: number;
   startMinute: number;
-  winDistance: number;
+  winDistance: number; // For endless, this is ignored or set very high
   colorTheme: string;       // For UI styling
+  isEndless?: boolean;      // Flag for endless mode
+}
+
+export interface Rank {
+    minTime: number;
+    title: string;
+    message: string;
+}
+
+export interface SeasonStyle {
+    roadColor: string;
+    borderColor: string;
+    accentColor: string;
+    laneOpacity: number;
+    carPalette: string[];
+    busPalette: string[];
 }
