@@ -21,35 +21,35 @@ export const SEASONS_ORDER = [Season.SPRING, Season.SUMMER, Season.AUTUMN, Seaso
 export const SEASON_STYLES: Record<Season, SeasonStyle> = {
     [Season.SPRING]: {
         roadColor: 'bg-slate-200',
-        borderColor: 'bg-emerald-300', // Fresh grass
+        borderColor: 'bg-emerald-300', 
         accentColor: 'border-emerald-400',
         laneOpacity: 0.6,
-        carPalette: ['#f9a8d4', '#86efac', '#fde047'], // Pastel Pink, Green, Yellow
-        busPalette: ['#fdba74', '#67e8f9'], // Pastel Orange, Cyan
+        carPalette: ['#f9a8d4', '#86efac', '#fde047'], 
+        busPalette: ['#fdba74', '#67e8f9'], 
     },
     [Season.SUMMER]: {
-        roadColor: 'bg-stone-300', // Hot asphalt
-        borderColor: 'bg-lime-400', // Vibrant grass
+        roadColor: 'bg-stone-300', 
+        borderColor: 'bg-lime-400', 
         accentColor: 'border-lime-500',
         laneOpacity: 0.7,
-        carPalette: ['#ef4444', '#3b82f6', '#eab308'], // Vivid Red, Blue, Yellow
-        busPalette: ['#f97316', '#06b6d4'], // Vivid Orange, Cyan
+        carPalette: ['#ef4444', '#3b82f6', '#eab308'], 
+        busPalette: ['#f97316', '#06b6d4'], 
     },
     [Season.AUTUMN]: {
-        roadColor: 'bg-orange-100/50', // Warm tone road
-        borderColor: 'bg-amber-600', // Fallen leaves
+        roadColor: 'bg-orange-100/50', 
+        borderColor: 'bg-amber-600', 
         accentColor: 'border-amber-700',
         laneOpacity: 0.5,
-        carPalette: ['#78350f', '#b45309', '#991b1b'], // Brown, Amber, Dark Red
-        busPalette: ['#ea580c', '#ca8a04'], // Burnt Orange, Dark Yellow
+        carPalette: ['#78350f', '#b45309', '#991b1b'], 
+        busPalette: ['#ea580c', '#ca8a04'], 
     },
     [Season.WINTER]: {
-        roadColor: 'bg-slate-300', // Cold road
-        borderColor: 'bg-slate-100', // Snow
+        roadColor: 'bg-slate-300', 
+        borderColor: 'bg-slate-100', 
         accentColor: 'border-blue-200',
         laneOpacity: 0.4,
-        carPalette: ['#334155', '#475569', '#64748b'], // Cool Greys/Blues
-        busPalette: ['#94a3b8', '#cbd5e1'], // Light Greys
+        carPalette: ['#334155', '#475569', '#64748b'], 
+        busPalette: ['#94a3b8', '#cbd5e1'], 
     },
 };
 
@@ -101,12 +101,11 @@ export const LEVELS: LevelConfig[] = [
 
 export const ENDLESS_LEVEL: LevelConfig = {
     id: 'ENDLESS',
-    name: '无尽摸鱼地狱',
+    name: '无尽早高峰',
     description: '没有尽头，看看你能坚持多久！',
-    // Updated Base Stats to match NORMAL difficulty
     baseSpeed: 1.6, 
     spawnRateMs: 800, 
-    minThieves: 999, // Always spawn
+    minThieves: 999, 
     thiefChance: 0.025,
     blockadeChance: 0.4,
     startHour: 0,
@@ -116,14 +115,14 @@ export const ENDLESS_LEVEL: LevelConfig = {
     isEndless: true,
 };
 
-// Ranks based on survival seconds
+// Adjusted Ranks: 150s is Top Tier
 export const RANKS: Rank[] = [
     { minTime: 0, title: '早起困难户', message: '刚出门就倒下了...' },
     { minTime: 20, title: '悠闲实习生', message: '虽然迟到了，但心态很好。' },
-    { minTime: 45, title: '资深打工人', message: '这种程度的早高峰已经是家常便饭。' },
-    { minTime: 75, title: '极限踩点王', message: '只要我骑得够快，迟到就追不上我！' },
-    { minTime: 100, title: '全勤奖猎人', message: '风里雨里，公司等你！' },
-    { minTime: 125, title: '秋名山车神', message: '连小偷都看不清你的车尾灯。' },
+    { minTime: 40, title: '资深打工人', message: '这种程度的早高峰已经是家常便饭。' },
+    { minTime: 60, title: '极限踩点王', message: '只要我骑得够快，迟到就追不上我！' },
+    { minTime: 90, title: '全勤奖猎人', message: '风里雨里，公司等你！' },
+    { minTime: 120, title: '秋名山车神', message: '连小偷都看不清你的车尾灯。' },
     { minTime: 150, title: '时间管理大师', message: '你已经超越了时间的概念。' },
 ];
 
