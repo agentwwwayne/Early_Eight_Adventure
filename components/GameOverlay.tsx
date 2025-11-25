@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { GameStatus, LevelConfig, Season, Rank } from '../types';
-import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun, ThumbsUp, Crown, Timer } from 'lucide-react';
+import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun, ThumbsUp, Crown, Timer, CloudRain, Flame, Coffee, ThumbsDown, Share2, Download } from 'lucide-react';
 import { GAME_CONFIG, LEVELS, ENDLESS_LEVEL, RANKS, SEASON_STYLES } from '../constants';
+
+// Declare html2canvas globally as it is loaded via script tag
+declare const html2canvas: any;
 
 interface GameOverlayProps {
   status: GameStatus;
@@ -23,7 +26,7 @@ interface GameOverlayProps {
   countdown?: number; 
 }
 
-// Helper defined outside component to avoid scope issues
+// Helper defined outside component
 const getRank = (seconds: number) => {
     let bestRank = RANKS[0];
     for (const rank of RANKS) {
@@ -39,6 +42,8 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
 }) => {
   
   const [showRules, setShowRules] = useState(false);
+  const [shareImg, setShareImg] = useState<string | null>(null);
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false);
 
   // Progress Bar Calculation
   const winDistance = currentLevel ? currentLevel.winDistance : GAME_CONFIG.WIN_DISTANCE; 
@@ -127,15 +132,204 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       for (let i = 0; i < RANKS.length; i++) {
           if (seconds >= RANKS[i].minTime) {
               currentRank = RANKS[i];
-              // If there is a next rank, set it
               if (i < RANKS.length - 1) {
                   nextRank = RANKS[i + 1];
               } else {
-                  nextRank = null; // Max rank achieved
+                  nextRank = null; 
               }
           }
       }
       return { current: currentRank, next: nextRank };
+  };
+
+  // --- EXTENDED VISUAL THEMES FOR ENDLESS RANKS ---
+  const renderEndlessEffect = (seconds: number) => {
+      if (seconds < 20) {
+          return (
+             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                 <div className="absolute inset-0 bg-slate-900/20"></div>
+                 {[...Array(40)].map((_,i) => (
+                     <div key={i} className="absolute top-[-20%] w-0.5 h-8 bg-blue-400/60 rounded-full" 
+                          style={{ 
+                              left: `${Math.random()*100}%`, 
+                              animation: `rain 0.5s linear infinite`, 
+                              animationDelay: `${Math.random()}s`,
+                              opacity: Math.random() 
+                          }}></div>
+                 ))}
+             </div>
+          );
+      }
+      if (seconds < 40) {
+          return (
+             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                 {[...Array(12)].map((_,i) => (
+                     <div key={i} className="absolute top-[-10%]" 
+                          style={{ 
+                              left: `${Math.random()*100}%`, 
+                              animation: `floatDown ${3+Math.random()*2}s linear infinite`,
+                              animationDelay: `${Math.random()*2}s` 
+                          }}>
+                         <Leaf size={16 + Math.random()*8} className="text-emerald-300/60" style={{transform: `rotate(${Math.random()*360}deg)`}} />
+                     </div>
+                 ))}
+             </div>
+          );
+      }
+      if (seconds < 60) {
+           return (
+             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                 {[...Array(15)].map((_,i) => (
+                     <div key={i} className="absolute bottom-[-10%] bg-blue-400/30 rounded-full" 
+                          style={{ 
+                              left: `${Math.random()*100}%`, 
+                              width: `${4+Math.random()*8}px`,
+                              height: `${4+Math.random()*8}px`,
+                              animation: `bubbleUp ${2+Math.random()*3}s ease-in infinite`,
+                              animationDelay: `${Math.random()*2}s` 
+                          }}></div>
+                 ))}
+             </div>
+          );
+      }
+      if (seconds < 90) {
+           return (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute inset-0 bg-orange-400/10 animate-pulse"></div>
+                {[...Array(3)].map((_,i) => (
+                     <div key={i} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 border-orange-300/30 rounded-full"
+                          style={{
+                              width: '100px',
+                              height: '100px',
+                              animation: `ripple 2s linear infinite`,
+                              animationDelay: `${i*0.6}s`
+                          }}></div>
+                ))}
+            </div>
+           );
+      }
+      if (seconds < 120) {
+           return (
+             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                 {[...Array(30)].map((_,i) => (
+                     <div key={i} className={`absolute top-[-10%] w-1.5 h-3 ${['bg-rose-400','bg-yellow-400','bg-blue-400'][i%3]}`} 
+                          style={{ 
+                              left: `${Math.random()*100}%`, 
+                              animation: `confetti ${2+Math.random()}s linear infinite`,
+                              animationDelay: `${Math.random()*2}s` 
+                          }}></div>
+                 ))}
+             </div>
+           );
+      }
+      if (seconds < 150) {
+           return (
+             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                 <div className="absolute inset-0 bg-purple-500/5"></div>
+                 {[...Array(8)].map((_,i) => (
+                     <div key={i} className="absolute h-[1px] bg-white/40" 
+                          style={{ 
+                              top: `${Math.random()*100}%`,
+                              left: '-10%',
+                              width: '20%',
+                              animation: `shootingStar 0.5s linear infinite`,
+                              animationDelay: `${Math.random()*2}s`
+                          }}></div>
+                 ))}
+             </div>
+           );
+      }
+      return (
+         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+             <div className="absolute inset-0 bg-yellow-400/10 animate-pulse"></div>
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[conic-gradient(from_0deg,transparent,rgba(255,215,0,0.1),transparent)] animate-[spin_10s_linear_infinite]"></div>
+             {[...Array(20)].map((_,i) => (
+                 <div key={i} className="absolute text-yellow-200" 
+                      style={{ 
+                          top: `${Math.random()*100}%`, 
+                          left: `${Math.random()*100}%`, 
+                          animation: `twinkle 1.5s ease-in-out infinite`,
+                          animationDelay: `${Math.random()}s`,
+                          transform: `scale(${0.5+Math.random()})`
+                      }}>
+                     <Star size={12} fill="currentColor" />
+                 </div>
+             ))}
+         </div>
+      );
+  };
+
+  const getEndlessTheme = (seconds: number) => {
+      if (seconds < 20) return {
+          bg: "from-slate-800 to-slate-900", 
+          iconBg: "bg-slate-600",
+          MainIcon: CloudRain,
+          textColor: "text-slate-200",
+          subTextColor: "text-slate-400",
+          emote: "⛈️",
+          anim: "animate-none",
+          panelBg: "bg-white/10 border-white/10 text-white"
+      };
+      if (seconds < 40) return {
+          bg: "from-emerald-50 to-teal-100",
+          iconBg: "bg-emerald-400",
+          MainIcon: Coffee, 
+          textColor: "text-emerald-800",
+          subTextColor: "text-emerald-700",
+          emote: "🍵",
+          anim: "animate-bounce",
+          panelBg: "bg-white/60 border-white/40 text-slate-800"
+      };
+      if (seconds < 60) return {
+          bg: "from-blue-50 to-indigo-100",
+          iconBg: "bg-blue-500",
+          MainIcon: Smartphone, 
+          textColor: "text-blue-900",
+          subTextColor: "text-blue-700",
+          emote: "📱",
+          anim: "animate-pulse",
+          panelBg: "bg-white/60 border-white/40 text-slate-800"
+      };
+      if (seconds < 90) return {
+          bg: "from-orange-50 to-amber-100",
+          iconBg: "bg-orange-500",
+          MainIcon: Zap,
+          textColor: "text-orange-900",
+          subTextColor: "text-orange-700",
+          emote: "⚡",
+          anim: "animate-[shake_0.5s_ease-in-out]",
+          panelBg: "bg-white/60 border-white/40 text-slate-800"
+      };
+      if (seconds < 120) return {
+          bg: "from-rose-100 to-pink-200",
+          iconBg: "bg-rose-500",
+          MainIcon: Award,
+          textColor: "text-rose-900",
+          subTextColor: "text-rose-700",
+          emote: "🎖️",
+          anim: "animate-bounce",
+          panelBg: "bg-white/60 border-white/40 text-slate-800"
+      };
+      if (seconds < 150) return {
+          bg: "from-violet-900 to-fuchsia-900",
+          iconBg: "bg-fuchsia-500",
+          MainIcon: Flame, 
+          textColor: "text-fuchsia-100",
+          subTextColor: "text-fuchsia-200",
+          emote: "🏎️",
+          anim: "animate-spin-slow",
+          panelBg: "bg-white/10 border-white/20 text-white"
+      };
+      return {
+          bg: "from-amber-100 via-yellow-100 to-orange-100", 
+          iconBg: "bg-yellow-500",
+          MainIcon: Crown, 
+          textColor: "text-amber-900",
+          subTextColor: "text-amber-700",
+          emote: "👑",
+          anim: "animate-[ping_1s_infinite]",
+          panelBg: "bg-white/60 border-white/40 text-slate-800"
+      };
   };
 
   // Generate witty fail message based on progress
@@ -171,7 +365,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       );
   };
 
-  // Memoize messages
   const failMessage = useMemo(() => {
       if (status === GameStatus.GAME_OVER) {
           const isEndless = currentLevel?.isEndless || false;
@@ -180,8 +373,29 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       return null;
   }, [status, progress, currentLevel, causeOfDeath]);
 
+  // --- SHARE FUNCTIONALITY ---
+  const handleShare = async () => {
+      setIsGeneratingShare(true);
+      setTimeout(async () => {
+          const element = document.getElementById('share-card');
+          if (element && typeof html2canvas !== 'undefined') {
+              try {
+                  const canvas = await html2canvas(element, { 
+                      backgroundColor: null, 
+                      scale: 2,
+                      useCORS: true 
+                  });
+                  const data = canvas.toDataURL('image/png');
+                  setShareImg(data);
+              } catch (e) {
+                  console.error("Screenshot failed", e);
+              }
+          }
+          setIsGeneratingShare(false);
+      }, 100);
+  };
 
-  // STORY_INTRO handled by StoryScene
+
   if (status === GameStatus.STORY_INTRO) {
       return null;
   }
@@ -191,7 +405,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       <div className="absolute top-0 left-0 right-0 p-4 z-20 pointer-events-none">
         {/* Top Header - Info Cards */}
         <div className="flex justify-between items-start mb-3">
-            
             <div className="flex gap-2 items-center">
                 <button 
                     onClick={onPause}
@@ -241,41 +454,25 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
   // --- PAUSE MENU ---
   if (status === GameStatus.PAUSED) {
       const pauseTheme = getSeasonPauseTheme(currentSeason);
-      
       return (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/30 backdrop-blur-sm p-6 animate-in fade-in duration-200">
             <div className={`bg-gradient-to-b ${pauseTheme.bg} rounded-3xl w-full max-w-xs p-6 shadow-2xl border-2 ${pauseTheme.border} relative overflow-hidden`}>
-                
                 <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-white/40 rounded-full blur-2xl"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-24 h-24 bg-white/40 rounded-full blur-2xl"></div>
-                
                 {renderSeasonalDecor(currentSeason)}
-
                 <div className="relative z-10">
                     <h2 className="text-2xl font-black text-slate-800 text-center mb-2 flex items-center justify-center gap-2">
                         <Pause size={24} className={pauseTheme.iconColor} fill="currentColor"/> 暂停中
                     </h2>
                     <p className="text-xs text-slate-500 text-center mb-8 font-medium">休息一下，马上出发</p>
-                    
                     <div className="space-y-3">
-                        <button 
-                            onClick={onResume}
-                            className={`w-full text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 ${pauseTheme.btnPrimary}`}
-                        >
+                        <button onClick={onResume} className={`w-full text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 ${pauseTheme.btnPrimary}`}>
                             <Play size={20} fill="currentColor"/> 继续游戏
                         </button>
-                        
-                        <button 
-                            onClick={onRetry}
-                            className="w-full bg-white/60 hover:bg-white/80 active:scale-95 text-slate-700 font-bold py-3.5 rounded-xl border border-white/50 shadow-sm transition-all flex items-center justify-center gap-2"
-                        >
+                        <button onClick={onRetry} className="w-full bg-white/60 hover:bg-white/80 active:scale-95 text-slate-700 font-bold py-3.5 rounded-xl border border-white/50 shadow-sm transition-all flex items-center justify-center gap-2">
                             <RefreshCw size={18} /> 重新开始
                         </button>
-                        
-                        <button 
-                            onClick={onReturn}
-                            className="w-full bg-white/40 hover:bg-white/60 active:scale-95 text-slate-600 font-bold py-3.5 rounded-xl border border-white/30 transition-all flex items-center justify-center gap-2"
-                        >
+                        <button onClick={onReturn} className="w-full bg-white/40 hover:bg-white/60 active:scale-95 text-slate-600 font-bold py-3.5 rounded-xl border border-white/30 transition-all flex items-center justify-center gap-2">
                             <Home size={18} /> 退出本局
                         </button>
                     </div>
@@ -289,16 +486,13 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
   if (status === GameStatus.START) {
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
-        
+        {/* Decorations */}
         <div className="absolute top-[-10%] left-[-20%] w-64 h-64 bg-white/50 rounded-full blur-3xl animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>
         <div className="absolute top-[15%] right-[-10%] w-40 h-40 bg-yellow-200/40 rounded-full blur-2xl animate-[bounce_5s_infinite] delay-700 pointer-events-none"></div>
         <div className="absolute bottom-[15%] left-[5%] w-32 h-32 bg-pink-300/30 rounded-full blur-xl animate-[pulse_3s_ease-in-out_infinite] pointer-events-none"></div>
         <div className="absolute top-[40%] left-[30%] w-48 h-48 bg-sky-300/10 rounded-full blur-2xl animate-[ping_4s_cubic-bezier(0,0,0.2,1)_infinite] pointer-events-none"></div>
 
-        <button 
-            onClick={() => setShowRules(true)}
-            className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm border border-slate-200 text-slate-600 hover:bg-white hover:text-sky-500 active:scale-90 active:bg-slate-100 transition-all z-20"
-        >
+        <button onClick={() => setShowRules(true)} className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm border border-slate-200 text-slate-600 hover:bg-white hover:text-sky-500 active:scale-90 active:bg-slate-100 transition-all z-20">
             <BookOpen size={20} />
         </button>
 
@@ -310,7 +504,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         </div>
 
         <h1 className="text-3xl font-black mb-1 text-slate-800 tracking-tight text-center drop-shadow-sm flex-shrink-0 z-10">
-          汪汪早八<span className="text-sky-600">大冒险</span>
+          早八大冒险
         </h1>
         
         <div className="flex flex-col items-center gap-2 mb-6 flex-shrink-0 z-10">
@@ -322,33 +516,18 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         
         <div className="w-full max-w-xs flex flex-col gap-4 mb-6 flex-shrink-0 z-10">
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">选择今日通勤姿势</div>
-          
           {LEVELS.map((level, index) => {
              const theme = getThemeColors(level.id);
              return (
-             <button 
-                key={level.id}
-                onClick={() => onStart(level)}
-                className="w-full group relative bg-white/90 backdrop-blur-sm rounded-2xl p-1 shadow-sm hover:shadow-xl hover:-translate-y-1 active:scale-95 active:shadow-inner transition-all duration-200 overflow-visible flex-shrink-0"
-             >
-                {index === 0 && (
-                    <div className="absolute -top-2.5 left-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-20">
-                        新手推荐 ✨
-                    </div>
-                )}
+             <button key={level.id} onClick={() => onStart(level)} className="w-full group relative bg-white/90 backdrop-blur-sm rounded-2xl p-1 shadow-sm hover:shadow-xl hover:-translate-y-1 active:scale-95 active:shadow-inner transition-all duration-200 overflow-visible flex-shrink-0">
+                {index === 0 && <div className="absolute -top-2.5 left-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm z-20">新手推荐 ✨</div>}
                 <div className={`relative w-full rounded-xl p-3 overflow-hidden border group-active:bg-slate-50 transition-colors ${theme.bg} ${theme.border}`}>
                     <div className="flex justify-between items-center relative z-10">
                         <div className="text-left">
-                            <div className="font-black text-lg text-slate-800 flex items-center gap-2">
-                                {level.name}
-                            </div>
-                            <div className="text-xs font-mono text-slate-500 mt-0.5 flex items-center gap-1">
-                                <Clock size={10} /> {formatTime(level.startHour, level.startMinute)} 出发
-                            </div>
+                            <div className="font-black text-lg text-slate-800 flex items-center gap-2">{level.name}</div>
+                            <div className="text-xs font-mono text-slate-500 mt-0.5 flex items-center gap-1"><Clock size={10} /> {formatTime(level.startHour, level.startMinute)} 出发</div>
                         </div>
-                        <div className={`p-2 rounded-full bg-white shadow-sm group-hover:shadow-md transition-all ${theme.icon}`}>
-                            <Play size={20} fill="currentColor" className="ml-0.5"/>
-                        </div>
+                        <div className={`p-2 rounded-full bg-white shadow-sm group-hover:shadow-md transition-all ${theme.icon}`}><Play size={20} fill="currentColor" className="ml-0.5"/></div>
                     </div>
                 </div>
              </button>
@@ -356,24 +535,16 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
           })}
         </div>
 
-        <div className="w-full max-w-xs flex-shrink-0 z-10 mb-8">
-             <button 
-                onClick={() => onStart(ENDLESS_LEVEL)}
-                className="w-full group relative bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-[2px] shadow-lg hover:shadow-purple-300/50 hover:-translate-y-1 active:scale-95 transition-all"
-             >
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-purple-900 text-[10px] font-black px-3 py-0.5 rounded-full shadow-sm z-20 animate-bounce">
-                    挑战极限!
-                </div>
+        <div className="w-full max-w-xs flex-shrink-0 z-10 mb-8 relative group">
+             <div className="absolute -top-8 right-0 bg-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-full rounded-br-none animate-bounce z-20 shadow-sm">看看谁是时间管理大师！</div>
+             <button onClick={() => onStart(ENDLESS_LEVEL)} className="w-full group relative bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-[2px] shadow-lg hover:shadow-purple-300/50 hover:-translate-y-1 active:scale-95 transition-all">
+                <div className="absolute -top-3 left-4 bg-yellow-400 text-purple-900 text-[10px] font-black px-3 py-0.5 rounded-full shadow-sm z-20">挑战极限</div>
                 <div className="bg-white/10 backdrop-blur-md w-full h-full rounded-2xl p-4 flex items-center justify-between">
                     <div className="text-left text-white">
-                        <div className="font-black text-lg flex items-center gap-2">
-                            <Infinity size={20} /> 无尽早高峰冲刺
-                        </div>
+                        <div className="font-black text-lg flex items-center gap-2"><Infinity size={20} /> 无尽早高峰冲刺</div>
                         <p className="text-xs text-purple-100/80">难度随时间增加，测测你的极限！</p>
                     </div>
-                    <div className="p-2 rounded-full bg-white/20 text-white">
-                        <Play size={20} fill="currentColor" className="ml-0.5"/>
-                    </div>
+                    <div className="p-2 rounded-full bg-white/20 text-white"><Play size={20} fill="currentColor" className="ml-0.5"/></div>
                 </div>
              </button>
         </div>
@@ -382,54 +553,30 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                 <div className="bg-white rounded-3xl w-full max-w-sm relative shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                     <div className="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center">
-                        <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                            <BookOpen size={20} className="text-sky-500"/> 游戏规则
-                        </h2>
-                        <button 
-                            onClick={() => setShowRules(false)}
-                            className="p-1 bg-slate-200 rounded-full text-slate-500 hover:bg-slate-300 active:scale-90 transition-all"
-                        >
-                            <X size={20} />
-                        </button>
+                        <h2 className="text-lg font-black text-slate-800 flex items-center gap-2"><BookOpen size={20} className="text-sky-500"/> 游戏规则</h2>
+                        <button onClick={() => setShowRules(false)} className="p-1 bg-slate-200 rounded-full text-slate-500 hover:bg-slate-300 active:scale-90 transition-all"><X size={20} /></button>
                     </div>
                     <div className="p-6 space-y-5">
+                        {/* Rules Content */}
                         <div className="flex gap-4 items-start">
                             <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 text-sky-600 font-bold">1</div>
-                            <div>
-                                <h3 className="font-bold text-slate-800 text-sm mb-1">按住滑动or键盘操控</h3>
-                                <p className="text-xs text-slate-500 leading-relaxed">手指滑动屏幕or键盘控制，控制汪汪左右变道或上下加速/减速。</p>
-                            </div>
+                            <div><h3 className="font-bold text-slate-800 text-sm mb-1">按住滑动or键盘操控</h3><p className="text-xs text-slate-500 leading-relaxed">手指滑动屏幕or键盘控制，控制主角左右变道或上下加速/减速。</p></div>
                         </div>
                         <div className="flex gap-4 items-start">
                             <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 text-emerald-600 font-bold">2</div>
-                            <div>
-                                <h3 className="font-bold text-slate-800 text-sm mb-1">收集手机</h3>
-                                <p className="text-xs text-slate-500 leading-relaxed">路上会有散落的手机，收集它们！如果你没有手机，就无法打卡！</p>
-                            </div>
+                            <div><h3 className="font-bold text-slate-800 text-sm mb-1">收集手机</h3><p className="text-xs text-slate-500 leading-relaxed">路上会有散落的手机，收集它们！如果你没有手机，就无法打卡！</p></div>
                         </div>
                         <div className="flex gap-4 items-start">
                             <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0 text-rose-600 font-bold">3</div>
-                            <div>
-                                <h3 className="font-bold text-slate-800 text-sm mb-1">躲避危险</h3>
-                                <p className="text-xs text-slate-500 leading-relaxed">
-                                    <span className="font-bold text-rose-500">不要撞车！</span> 撞车会迟到，游戏结束。<br/>
-                                    <span className="font-bold text-rose-500">小心小偷！</span> 他们会偷走你的一部手机。如果你没有手机了，游戏结束。
-                                </p>
-                            </div>
+                            <div><h3 className="font-bold text-slate-800 text-sm mb-1">躲避危险</h3><p className="text-xs text-slate-500 leading-relaxed"><span className="font-bold text-rose-500">不要撞车！</span> 撞车会迟到，游戏结束。<br/><span className="font-bold text-rose-500">小心小偷！</span> 他们会偷走你的一部手机。如果你没有手机了，游戏结束。</p></div>
                         </div>
                     </div>
                     <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-                        <button 
-                            onClick={() => setShowRules(false)}
-                            className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg shadow-slate-200 hover:bg-slate-800 active:scale-95 active:bg-slate-700 transition-all"
-                        >
-                            明白了，出发！
-                        </button>
+                        <button onClick={() => setShowRules(false)} className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg shadow-slate-200 hover:bg-slate-800 active:scale-95 active:bg-slate-700 transition-all">明白了，出发！</button>
                     </div>
                 </div>
             </div>
         )}
-
       </div>
     );
   }
@@ -441,7 +588,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     let title = "通勤失败";
     let description = null; 
     
-    // --- HIGH EMOTION LIGHT GRADIENTS ---
     let bgTheme = "bg-gradient-to-br from-slate-200 to-slate-300"; 
     let iconBg = "bg-rose-400";
     let MainIcon = AlertTriangle;
@@ -449,13 +595,14 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     let subTextColor = "text-slate-600";
     let overlayAnim = "animate-in fade-in duration-500";
     let showEmote = null;
+    let panelBg = "bg-white/60 border-white/40"; 
 
     const isStolen = causeOfDeath?.includes("偷") || causeOfDeath?.includes("抢");
     const isCrash = causeOfDeath?.includes("车") || causeOfDeath?.includes("撞");
 
+    // --- THEME DETERMINATION ---
     if (isWin) {
       title = "打卡成功！";
-      // Victory: Golden Sunlight / Mint Freshness (Stronger joy)
       bgTheme = "bg-gradient-to-br from-emerald-100 via-yellow-100 to-orange-100"; 
       iconBg = "bg-yellow-400";
       MainIcon = Trophy;
@@ -464,44 +611,42 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       showEmote = <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">🥳</div>;
       const extraPhones = phoneCount - 1;
       if (extraPhones > 0) {
-        description = `汪汪不仅在8:30前赶到了公司，还顺手捡了 ${extraPhones} 部手机，简直是打工人之神！`;
+        description = `你不仅在8:30前赶到了公司，还顺手捡了 ${extraPhones} 部手机，简直是打工人之神！`;
       } else {
-        description = "汪汪在8:30前安全抵达了公司，保住了这个月的全勤奖！";
+        description = "你在8:30前安全抵达了公司，保住了这个月的全勤奖！";
       }
     } else if (isEndless) {
-        const rankInfo = getRank(survivalTime);
-        const isHighRank = survivalTime >= 75; // "极限踩点王" and above
+        const rankInfo = getRankInfo(survivalTime);
+        const currentRankData = getRank(survivalTime);
         
-        if (isHighRank) {
-            title = "冲刺结束！";
-            bgTheme = "bg-gradient-to-br from-purple-100 via-pink-100 to-rose-100"; // Celebration vibe
-            iconBg = "bg-purple-500";
-            MainIcon = Award;
-            textColor = "text-purple-900";
-            showEmote = <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">😎</div>;
-        } else {
-            title = "冲刺失败";
-            bgTheme = "bg-gradient-to-br from-slate-200 to-slate-300"; // Sad vibe
-            iconBg = "bg-slate-400";
-            MainIcon = ThumbsUp; // "Good try"
-            textColor = "text-slate-800";
-            showEmote = <div className="absolute -top-6 right-0 text-5xl animate-bounce delay-100">😭</div>;
-        }
+        const theme = getEndlessTheme(survivalTime);
+        
+        title = survivalTime < 75 ? "冲刺结束" : "冲刺成功";
+        bgTheme = `bg-gradient-to-br ${theme.bg}`;
+        iconBg = theme.iconBg;
+        MainIcon = theme.MainIcon;
+        textColor = theme.textColor;
+        subTextColor = theme.subTextColor || "text-slate-600";
+        showEmote = <div className={`absolute -top-6 right-0 text-5xl delay-100 ${theme.anim}`}>{theme.emote}</div>;
+        if (survivalTime >= 75) overlayAnim += " animate-[pulse_3s_infinite]";
+        panelBg = theme.panelBg || "bg-white/60 border-white/40";
 
         description = (
             <>
-                <span className="block mb-2 opacity-80 text-sm">{isHighRank ? "太强了！这波操作行云流水！" : "别灰心，下次一定能冲更远！"}</span>
-                <span className={`block font-bold text-lg ${isHighRank ? 'text-purple-600' : 'text-slate-600'}`}>{rankInfo.message}</span>
+                <span className="block mb-2 opacity-80 text-sm">
+                    {survivalTime >= 75 ? "太强了！这波操作行云流水！" : "别灰心，下次一定能冲更远！"}
+                </span>
+                <span className={`block font-bold text-lg ${theme.textColor}`}>
+                    {currentRankData.message}
+                </span>
             </>
         );
         
     } else {
-        // Normal Game Over
+        // Normal Fail
         description = failMessage; 
-
         if (isStolen) {
             title = "手机被偷啦！";
-            // Stolen: Deep Blue / Grey (Sadness, cold)
             bgTheme = "bg-gradient-to-br from-indigo-100 to-slate-200"; 
             iconBg = "bg-indigo-500";
             MainIcon = Smartphone; 
@@ -510,63 +655,127 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
             showEmote = <div className="absolute -top-4 -right-4 text-5xl animate-bounce delay-100">😭</div>;
         } else if (isCrash) {
             title = "撞到车啦！";
-            // Crash: Red / Orange (Alarming, hot)
             bgTheme = "bg-gradient-to-br from-red-100 to-orange-200"; 
             iconBg = "bg-red-500";
             MainIcon = AlertTriangle;
             textColor = "text-red-900";
             subTextColor = "text-red-700";
-            // Add shake effect for crash
             overlayAnim += " animate-[shake_0.5s_ease-in-out]"; 
             showEmote = <div className="absolute -top-4 -left-4 text-5xl animate-spin-slow">😵‍💫</div>;
         }
     }
 
-    // Determine Next Action Button
+    // Define Button
     let PrimaryAction = null;
-    
     if (isWin) {
         if (currentLevel?.id === 'EASY' || currentLevel?.id === 'NORMAL') {
             PrimaryAction = (
-                <button 
-                onClick={onNextLevel}
-                className="w-full group relative bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-95 active:shadow-sm text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-emerald-900/20 transform transition-all flex items-center justify-center gap-2"
-                >
-                <span className="text-xl drop-shadow-sm">下一关</span>
-                <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
+                <button onClick={onNextLevel} className="w-full group relative bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-95 active:shadow-sm text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-emerald-900/20 transform transition-all flex items-center justify-center gap-2">
+                <span className="text-xl drop-shadow-sm">下一关</span><ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
                 </button>
             );
         } else {
             PrimaryAction = (
-                <button 
-                onClick={() => onStart(ENDLESS_LEVEL)}
-                className="w-full group relative bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 active:shadow-sm text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-indigo-900/20 transform transition-all flex items-center justify-center gap-2"
-                >
-                <Infinity size={24} className="animate-pulse" />
-                <span className="text-xl drop-shadow-sm">试试无尽模式</span>
+                <button onClick={() => onStart(ENDLESS_LEVEL)} className="w-full group relative bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 active:shadow-sm text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-indigo-900/20 transform transition-all flex items-center justify-center gap-2">
+                <Infinity size={24} className="animate-pulse" /><span className="text-xl drop-shadow-sm">试试无尽模式</span>
                 </button>
             );
         }
     } else {
         PrimaryAction = (
-            <button 
-            onClick={onRetry}
-            className="w-full group relative bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 active:scale-95 active:shadow-sm text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-orange-900/20 transform transition-all flex items-center justify-center gap-2"
-            >
-            <RefreshCw size={24} className="group-hover:rotate-180 transition-transform duration-500" />
-            <span className="text-xl drop-shadow-sm">再来一次</span>
+            <button onClick={onRetry} className="w-full group relative bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 active:scale-95 active:shadow-sm text-white font-black py-4 px-8 rounded-2xl shadow-lg shadow-orange-900/20 transform transition-all flex items-center justify-center gap-2">
+            <RefreshCw size={24} className="group-hover:rotate-180 transition-transform duration-500" /><span className="text-xl drop-shadow-sm">再来一次</span>
             </button>
         );
     }
     
-    // Rank Info for Endless
     const rankInfo = isEndless ? getRankInfo(survivalTime) : null;
     const currentRankData = isEndless ? getRank(survivalTime) : null;
+    const rankColorClass = isEndless ? getEndlessTheme(survivalTime).textColor : 'text-purple-600';
+
+    // --- RENDER SHARE CARD (HIDDEN) ---
+    // We render this off-screen to capture it for sharing.
+    // Styling matches the result theme but fixed layout for image generation.
+    const ShareCard = () => (
+        <div id="share-card" className="absolute top-[-9999px] left-[-9999px] w-[450px] h-[700px] flex flex-col items-center justify-center p-8 text-center" style={{ background: '#f8fafc' }}>
+             {/* Background Layer */}
+             <div className={`absolute inset-0 opacity-30 ${bgTheme.replace('bg-gradient-to-br', 'bg-gradient-to-b')}`}></div>
+             
+             {/* Card Container */}
+             <div className="relative z-10 bg-white p-8 rounded-[40px] shadow-2xl border-[6px] border-slate-50 w-full flex flex-col items-center gap-6 overflow-hidden">
+                 
+                 {/* Top Decorative Badge */}
+                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-1.5 bg-slate-200 rounded-b-full"></div>
+
+                 {/* Icon Circle */}
+                 <div className={`p-6 rounded-full ${iconBg} text-white shadow-lg mt-4`}>
+                     <MainIcon size={80} />
+                 </div>
+                 
+                 {/* Title Section */}
+                 <div className="space-y-2">
+                    <div className="text-base text-slate-400 font-bold tracking-[0.2em] uppercase">早八大冒险</div>
+                    <div className={`text-4xl font-black ${textColor} leading-tight`}>{title}</div>
+                 </div>
+                 
+                 {/* Divider */}
+                 <div className="w-3/4 h-0.5 bg-slate-100 my-2"></div>
+                 
+                 {/* Stats Section - Dynamic Content */}
+                 {isEndless ? (
+                     <div className="bg-slate-50 rounded-2xl p-6 w-full">
+                        <div className="text-5xl font-black text-slate-800 mb-2">{formatDuration(survivalTime)}</div>
+                        <div className={`text-2xl font-bold ${rankColorClass} flex items-center justify-center gap-2`}>
+                            {currentRankData?.title}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-2">{currentRankData?.message}</div>
+                     </div>
+                 ) : (
+                     <div className="bg-slate-50 rounded-2xl p-6 w-full">
+                        <div className="text-5xl font-black text-slate-800 mb-2">{gameTimeStr}</div>
+                        <div className="text-lg text-slate-500 font-bold flex items-center justify-center gap-2">
+                            <Smartphone size={20} className="text-emerald-500"/> 捡到 {phoneCount} 部手机
+                        </div>
+                     </div>
+                 )}
+
+                 {/* Divider */}
+                 <div className="w-full h-0.5 bg-slate-100 my-2"></div>
+                 
+                 {/* Footer */}
+                 <div className="flex items-center gap-3 text-slate-400 text-sm font-mono bg-slate-50 px-4 py-2 rounded-full">
+                     <Bike size={16} /> 
+                     <span className="font-bold">Scan to Challenge!</span>
+                 </div>
+                 
+                 {/* Fake QR Code Placeholders */}
+                 <div className="absolute bottom-4 right-4 opacity-20">
+                     <div className="w-8 h-8 border-2 border-slate-900 flex items-center justify-center"><div className="w-4 h-4 bg-slate-900"></div></div>
+                 </div>
+             </div>
+        </div>
+    );
 
     return (
-      <div className={`absolute inset-0 ${bgTheme} z-50 flex flex-col items-center justify-center p-6 text-center ${overlayAnim}`}>
+      // Added "overflow-y-auto no-scrollbar" to main container to handle overflow on small screens
+      <div className={`absolute inset-0 ${bgTheme} z-50 flex flex-col items-center justify-start md:justify-center p-6 text-center ${overlayAnim} overflow-y-auto no-scrollbar`}>
         
-        {/* Background Elements for Emotion */}
+        <ShareCard />
+        
+        {/* Share Modal */}
+        {shareImg && (
+            <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in">
+                <div className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-sm w-full animate-in zoom-in-95">
+                    <button onClick={() => setShareImg(null)} className="absolute -top-3 -right-3 bg-slate-800 text-white p-2 rounded-full shadow-md hover:bg-slate-700"><X size={16}/></button>
+                    <img src={shareImg} alt="Result" className="w-full h-auto rounded-xl border border-slate-100" />
+                    <div className="text-center mt-4 mb-2 text-slate-600 text-sm font-bold flex items-center justify-center gap-2">
+                        <Smartphone size={16}/> 长按图片保存分享
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {isEndless && renderEndlessEffect(survivalTime)}
         {isCrash && (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent animate-pulse pointer-events-none"></div>
         )}
@@ -576,66 +785,82 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
                 <div className="absolute bottom-20 right-10 w-40 h-40 bg-emerald-300/20 rounded-full blur-3xl animate-[pulse_4s_infinite]"></div>
             </div>
         )}
-
-        <div className="mb-6 relative">
-             <div className={`p-6 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin ? 'animate-bounce' : 'animate-pulse'}`}>
-                <MainIcon size={64} className="text-white drop-shadow-md" />
-             </div>
-             {showEmote}
-        </div>
         
-        <h2 className={`text-4xl font-black mb-3 drop-shadow-sm tracking-tight ${textColor}`}>
-          {title}
-        </h2>
-        
-        {isEndless && currentRankData && (
-            <div className="w-full max-w-xs mb-4 space-y-2">
-                <div className="bg-white/60 px-6 py-2 rounded-full border border-white/50 backdrop-blur-md animate-in zoom-in delay-200 shadow-sm">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-1">本次称号</span>
-                    <div className={`text-2xl font-black drop-shadow-sm ${survivalTime >= 75 ? 'text-purple-600' : 'text-slate-700'}`}>
-                        {currentRankData.title}
-                    </div>
+        {/* Main Content Container - Added mt-auto mb-auto to center vertically when possible */}
+        <div className="relative z-10 w-full max-w-xs flex flex-col items-center mt-auto mb-auto pt-4 pb-4">
+             <div className="mb-4 relative flex-shrink-0">
+                <div className={`p-5 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin || (isEndless && survivalTime > 75) ? 'animate-bounce' : 'animate-pulse'}`}>
+                    <MainIcon size={56} className="text-white drop-shadow-md" />
                 </div>
-                
-                {/* Next Rank Progress */}
-                {rankInfo && rankInfo.next && (
-                    <div className="text-xs font-medium text-slate-500 flex items-center justify-center gap-1 bg-black/5 py-1 px-3 rounded-full mx-auto w-fit">
-                        <Crown size={12} className="text-amber-500" />
-                        距离 <span className="font-bold text-amber-600">{rankInfo.next.title}</span> 还差 {Math.ceil(rankInfo.next.minTime - survivalTime)} 秒
+                {showEmote}
+            </div>
+            
+            <h2 className={`relative z-10 text-3xl font-black mb-3 drop-shadow-sm tracking-tight ${textColor}`}>{title}</h2>
+            
+            {isEndless && currentRankData && (
+                <div className="w-full mb-4 space-y-2 relative z-10 flex-shrink-0">
+                    <div className={`${panelBg} px-6 py-3 rounded-2xl backdrop-blur-md shadow-sm flex flex-col items-center transition-all duration-500`}>
+                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest block mb-1">本次称号</span>
+                        <div className={`text-2xl font-black drop-shadow-sm ${rankColorClass}`}>
+                            {currentRankData.title}
+                        </div>
                     </div>
-                )}
+                    
+                    {rankInfo && rankInfo.next && (
+                        <div className="bg-white/40 p-3 rounded-xl border border-white/30 backdrop-blur-sm animate-in slide-in-from-bottom-2 delay-300">
+                            <div className="flex justify-between items-center text-[10px] font-medium opacity-80 mb-1">
+                                <span className="flex items-center gap-1"><Crown size={10}/> {rankInfo.current.title}</span>
+                                <span className="flex items-center gap-1 font-bold"><Crown size={10}/> {rankInfo.next.title}</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-white/50 to-white transition-all duration-1000"
+                                    style={{ width: `${((survivalTime - rankInfo.current.minTime) / (rankInfo.next.minTime - rankInfo.current.minTime)) * 100}%` }}
+                                ></div>
+                            </div>
+                            <div className="text-center text-[10px] opacity-70 mt-1 font-bold">
+                                再坚持 {Math.ceil(rankInfo.next.minTime - survivalTime)} 秒升级！加油！
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <div className={`relative z-10 text-base ${subTextColor} mb-6 font-medium px-2 leading-relaxed max-w-xs`}>
+                {description}
             </div>
-        )}
 
-        <div className={`text-lg ${subTextColor} mb-8 font-medium px-4 leading-relaxed max-w-xs`}>
-            {description}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 w-full max-w-xs mb-8">
-           <div className="bg-white/60 p-4 rounded-2xl backdrop-blur-md border border-white/40 shadow-sm">
-            <div className="text-xs text-slate-500 uppercase font-bold mb-1">
-                {isEndless ? '坚持时长' : '最终时间'}
+            <div className="grid grid-cols-2 gap-3 w-full mb-6 relative z-10 flex-shrink-0">
+                <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
+                    <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">{isEndless ? '坚持时长' : '最终时间'}</div>
+                    <div className="text-xl font-black">{isEndless ? formatDuration(survivalTime) : gameTimeStr}</div>
+                </div>
+                <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
+                    <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">剩余手机</div>
+                    <div className={`text-xl font-black ${phoneCount === 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{phoneCount}</div>
+                </div>
             </div>
-            <div className="text-2xl font-black text-slate-800">
-                {isEndless ? formatDuration(survivalTime) : gameTimeStr}
+
+            <div className="w-full space-y-3 relative z-10 flex-shrink-0">
+                {PrimaryAction}
+                
+                <button 
+                    onClick={handleShare}
+                    disabled={isGeneratingShare}
+                    className="w-full bg-white/80 hover:bg-white active:scale-95 text-slate-700 font-bold py-3 px-8 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+                >
+                    {isGeneratingShare ? <RefreshCw size={18} className="animate-spin"/> : <Share2 size={18} />}
+                    {isGeneratingShare ? "生成中..." : "分享战绩"}
+                </button>
+
+                <button 
+                    onClick={onReturn}
+                    className="w-full bg-white/40 hover:bg-white/60 active:bg-white/70 active:scale-95 text-slate-800 font-bold py-3 px-8 rounded-xl backdrop-blur-sm border border-white/50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                    <Home size={18} />
+                    返回选关
+                </button>
             </div>
-          </div>
-           <div className="bg-white/60 p-4 rounded-2xl backdrop-blur-md border border-white/40 shadow-sm">
-            <div className="text-xs text-slate-500 uppercase font-bold mb-1">剩余手机</div>
-            <div className={`text-2xl font-black ${phoneCount === 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{phoneCount}</div>
-          </div>
-        </div>
-
-        <div className="w-full max-w-xs space-y-4">
-            {PrimaryAction}
-
-            <button 
-            onClick={onReturn}
-            className="w-full bg-white/40 hover:bg-white/60 active:bg-white/70 active:scale-95 text-slate-600 font-bold py-3 px-8 rounded-xl backdrop-blur-sm border border-white/50 transition-all flex items-center justify-center gap-2 shadow-sm"
-            >
-            <Home size={18} />
-            返回选关
-            </button>
         </div>
       </div>
     );
