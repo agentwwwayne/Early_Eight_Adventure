@@ -1,7 +1,8 @@
 export enum GameStatus {
   START = 'START',
+  STORY_INTRO = 'STORY_INTRO', // New status for plot countdown
   PLAYING = 'PLAYING',
-  PAUSED = 'PAUSED', // New status
+  PAUSED = 'PAUSED',
   GAME_OVER = 'GAME_OVER',
   VICTORY = 'VICTORY',
 }
