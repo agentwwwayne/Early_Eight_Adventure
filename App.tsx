@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameStatus, Entity, PlayerState, EntityType, LevelConfig, Season } from './types';
-import { GAME_CONFIG, ENTITY_CONFIG, LEVELS, ENDLESS_LEVEL, SEASONS_ORDER, SEASON_STYLES } from './constants';
+import { GAME_CONFIG, ENTITY_CONFIG, LEVELS, ENDLESS_LEVEL, SEASONS_ORDER } from './constants';
 import { checkCollision, spawnEntity, updateThiefLogic } from './services/gameEngine';
 import { Road } from './components/Road';
 import { Player, GameEntity } from './components/Entities';
@@ -500,7 +500,6 @@ const App: React.FC = () => {
   };
 
   return (
-    // Outer container now has a pleasant gradient background instead of dark gray
     <div className={`relative w-full h-screen bg-gradient-to-br ${getBgStyle()} flex justify-center items-center overflow-hidden transition-colors duration-1000`}>
       
       {/* Optional: Desktop background decor (blurred) */}
@@ -511,7 +510,12 @@ const App: React.FC = () => {
 
       <div 
         ref={containerRef}
-        className="relative w-full h-full md:w-auto md:max-w-[450px] md:h-[95vh] md:rounded-3xl md:border-[8px] md:border-white/50 md:ring-4 md:ring-black/5 bg-slate-200 shadow-2xl overflow-hidden touch-none z-10"
+        // KEY FIX: Removed h-[95vh] for desktop to prevent aspect ratio distortion issues
+        // Use explicit max-height or aspect ratio only if needed, but full height mobile approach 
+        // with a max-width wrapper is safer. 
+        // Added 'h-full' for mobile, 'md:h-[90vh]' for desktop to create the phone look.
+        // 'md:aspect-[9/19.5]' enforces phone shape.
+        className="relative w-full h-full md:w-auto md:h-[90vh] md:aspect-[9/19.5] md:rounded-3xl md:border-[8px] md:border-white/50 md:ring-4 md:ring-black/5 bg-slate-200 shadow-2xl overflow-hidden touch-none z-10"
       >
         {/* Story Scene Layer (Only visible during STORY_INTRO) */}
         {status === GameStatus.STORY_INTRO && <StoryScene countdown={countdown} />}
@@ -552,7 +556,7 @@ const App: React.FC = () => {
 
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50 pointer-events-none">
-               Ver 9.0.0 Desktop Polish
+               Ver 9.1.0 Desktop Aspect Fix
             </div>
         )}
       </div>
