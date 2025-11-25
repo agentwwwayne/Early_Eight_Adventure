@@ -20,10 +20,11 @@ interface GameOverlayProps {
   currentLevel: LevelConfig | null;
   survivalTime: number; 
   currentSeason: Season; 
+  countdown?: number; 
 }
 
 export const GameOverlay: React.FC<GameOverlayProps> = ({ 
-  status, score, distance, onStart, onRetry, onReturn, onNextLevel, onPause, onResume, causeOfDeath, gameTimeStr, phoneCount, currentLevel, survivalTime, currentSeason
+  status, score, distance, onStart, onRetry, onReturn, onNextLevel, onPause, onResume, causeOfDeath, gameTimeStr, phoneCount, currentLevel, survivalTime, currentSeason, countdown
 }) => {
   
   const [showRules, setShowRules] = useState(false);
@@ -117,6 +118,12 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       }
       return bestRank;
   };
+
+  // STORY_INTRO is now fully handled by StoryScene component, 
+  // so GameOverlay doesn't need to render anything for it.
+  if (status === GameStatus.STORY_INTRO) {
+      return null;
+  }
 
   if (status === GameStatus.PLAYING) {
     return (
@@ -217,7 +224,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       );
   }
 
-  // ... Start and Game Over/Victory screens remain same ...
+  // ... (Start, Game Over, Victory remain unchanged)
   if (status === GameStatus.START) {
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
