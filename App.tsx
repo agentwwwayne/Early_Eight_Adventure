@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GameStatus, Entity, PlayerState, EntityType, LevelConfig, Season } from './types';
+import { GameStatus, Entity, PlayerState, EntityType, LevelConfig, Season, Language } from './types';
 import { GAME_CONFIG, ENTITY_CONFIG, LEVELS, ENDLESS_LEVEL, SEASONS_ORDER } from './constants';
 import { checkCollision, spawnEntity, updateThiefLogic } from './services/gameEngine';
 import { Road } from './components/Road';
@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [countdown, setCountdown] = useState(3);
   
   const [isTouchMode, setIsTouchMode] = useState(false);
+  const [language, setLanguage] = useState<Language>('zh'); // Language state
   
   const [player, setPlayer] = useState<PlayerState>({
     lane: 2, 
@@ -33,7 +34,7 @@ const App: React.FC = () => {
   });
   const [entities, setEntities] = useState<Entity[]>([]);
 
-  // --- Refs (Game Logic Stability) ---
+  // ... (Refs same as before)
   const containerRef = useRef<HTMLDivElement>(null); 
   const statusRef = useRef<GameStatus>(GameStatus.START);
   const playerRef = useRef<PlayerState>(player);
@@ -56,6 +57,11 @@ const App: React.FC = () => {
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   useEffect(() => { currentSeasonRef.current = currentSeason; }, [currentSeason]);
 
+  // Toggle Language
+  const toggleLanguage = () => {
+      setLanguage(prev => prev === 'zh' ? 'en' : 'zh');
+  };
+
   // --- Countdown Logic ---
   useEffect(() => {
     let timer: number;
@@ -73,6 +79,7 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [status, countdown]);
 
+  // ... (updateGameTime, pauseGame, resumeGame same as before) ...
   const updateGameTime = useCallback((currentDist: number, level: LevelConfig) => {
     const startTotalMins = level.startHour * 60 + level.startMinute;
     const endTotalMins = GAME_CONFIG.END_HOUR * 60 + GAME_CONFIG.END_MINUTE;
@@ -108,30 +115,22 @@ const App: React.FC = () => {
       lastTimeRef.current = now; 
   }, []);
 
-  // --- Keyboard Controls (Discrete) ---
+  // ... (Input Handlers same as before) ...
   const handleKeyboardInput = useCallback((direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN') => {
     if (statusRef.current !== GameStatus.PLAYING) return;
-
     setIsTouchMode(false);
-
     const now = Date.now();
-    if (now - lastInputTimeRef.current < GAME_CONFIG.INPUT_COOLDOWN_MS) {
-        return; 
-    }
+    if (now - lastInputTimeRef.current < GAME_CONFIG.INPUT_COOLDOWN_MS) return;
     lastInputTimeRef.current = now;
 
     setPlayer(prev => {
       let newLane = prev.lane;
       let newY = prev.y;
-
       if (direction === 'LEFT') newLane = Math.max(0, Math.floor(prev.lane) - 1);
       if (direction === 'RIGHT') newLane = Math.min(4, Math.ceil(prev.lane) + 1);
-      
       if (direction === 'UP') newY = Math.max(GAME_CONFIG.PLAYER_MIN_Y, prev.y - GAME_CONFIG.PLAYER_Y_STEP);
       if (direction === 'DOWN') newY = Math.min(GAME_CONFIG.PLAYER_MAX_Y, prev.y + GAME_CONFIG.PLAYER_Y_STEP);
-
       newLane = Math.round(newLane);
-
       const newState = { ...prev, lane: newLane, y: newY };
       playerRef.current = newState; 
       return newState;
@@ -142,45 +141,33 @@ const App: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
           e.preventDefault();
-          if (statusRef.current === GameStatus.PLAYING) {
-              pauseGame();
-          } else if (statusRef.current === GameStatus.PAUSED) {
-              resumeGame();
-          }
+          if (statusRef.current === GameStatus.PLAYING) pauseGame();
+          else if (statusRef.current === GameStatus.PAUSED) resumeGame();
           return;
       }
-
       if (e.key === 'ArrowLeft' || e.key === 'a') handleKeyboardInput('LEFT');
       if (e.key === 'ArrowRight' || e.key === 'd') handleKeyboardInput('RIGHT');
       if (e.key === 'ArrowUp' || e.key === 'w') handleKeyboardInput('UP');
       if (e.key === 'ArrowDown' || e.key === 's') handleKeyboardInput('DOWN');
     };
-
     window.addEventListener('keydown', handleKeyDown);
 
     const handleTouch = (e: TouchEvent) => {
         if (statusRef.current !== GameStatus.PLAYING) return;
-        
         setIsTouchMode(true);
-
         if (e.cancelable && e.target === containerRef.current) e.preventDefault();
-        
         const container = containerRef.current;
         if (!container) return;
-        
         const touch = e.touches[0];
         const rect = container.getBoundingClientRect();
-        
         const relativeX = touch.clientX - rect.left;
         const clampedX = Math.max(0, Math.min(rect.width, relativeX));
         const percentageX = (clampedX / rect.width) * 100;
         let targetLane = (percentageX - 10) / 20;
         targetLane = Math.max(0, Math.min(4, targetLane));
-        
         const relativeY = touch.clientY - rect.top;
         const yPercent = (relativeY / rect.height) * 100;
         const clampedY = Math.max(GAME_CONFIG.PLAYER_MIN_Y, Math.min(GAME_CONFIG.PLAYER_MAX_Y, yPercent));
-        
         setPlayer(prev => {
             const newState = { ...prev, lane: targetLane, y: clampedY };
             playerRef.current = newState;
@@ -193,7 +180,6 @@ const App: React.FC = () => {
         container.addEventListener('touchstart', handleTouch, { passive: false });
         container.addEventListener('touchmove', handleTouch, { passive: false });
     }
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       if (container) {
@@ -203,14 +189,14 @@ const App: React.FC = () => {
     };
   }, [handleKeyboardInput, pauseGame, resumeGame]);
 
-  // --- Game Loop ---
+
+  // ... (Game Loop same as before) ...
   const loop = useCallback((time: number) => {
     if (statusRef.current === GameStatus.STORY_INTRO || statusRef.current === GameStatus.PAUSED) {
         lastTimeRef.current = time;
         requestRef.current = requestAnimationFrame(loop);
         return;
     }
-
     if (statusRef.current !== GameStatus.PLAYING) {
         lastTimeRef.current = time;
         requestRef.current = requestAnimationFrame(loop);
@@ -218,9 +204,7 @@ const App: React.FC = () => {
     }
     
     const activeLevel = currentLevelRef.current;
-    if (!activeLevel) {
-        return; 
-    }
+    if (!activeLevel) return; 
 
     const deltaTime = time - lastTimeRef.current;
     lastTimeRef.current = time;
@@ -230,7 +214,6 @@ const App: React.FC = () => {
     if (activeLevel.isEndless) {
         const elapsedSeconds = actualElapsedTime / 1000;
         setSurvivalTime(elapsedSeconds);
-        
         const seasonIndex = Math.floor(elapsedSeconds / 20) % 4;
         if (SEASONS_ORDER[seasonIndex] !== currentSeasonRef.current) {
             const nextSeason = SEASONS_ORDER[seasonIndex];
@@ -256,7 +239,6 @@ const App: React.FC = () => {
         
         if (!activeLevel.isEndless) {
             updateGameTime(newDist, activeLevel);
-            
             if (newDist >= activeLevel.winDistance) {
                 setStatus(GameStatus.VICTORY);
                 statusRef.current = GameStatus.VICTORY;
@@ -272,7 +254,6 @@ const App: React.FC = () => {
     }
 
     spawnTimerRef.current += deltaTime;
-    
     let currentSpawnRate = activeLevel.spawnRateMs;
     if (activeLevel.isEndless) {
         const elapsedSec = actualElapsedTime / 1000;
@@ -284,21 +265,9 @@ const App: React.FC = () => {
     if (spawnTimerRef.current > currentSpawnRate) {
       setEntities(prev => {
         const elapsedTimeSec = activeLevel.isEndless ? actualElapsedTime / 1000 : 0;
-        
-        const newSpawnedEntities = spawnEntity(
-            prev, 
-            currentDistance, 
-            currentPlayer.y, 
-            thievesSpawnedRef.current,
-            activeLevel,
-            elapsedTimeSec
-        );
-        
+        const newSpawnedEntities = spawnEntity(prev, currentDistance, currentPlayer.y, thievesSpawnedRef.current, activeLevel, elapsedTimeSec);
         const thiefCount = newSpawnedEntities.filter(e => e.type === EntityType.THIEF).length;
-        if (thiefCount > 0) {
-            thievesSpawnedRef.current += thiefCount;
-        }
-
+        if (thiefCount > 0) thievesSpawnedRef.current += thiefCount;
         return newSpawnedEntities.length > 0 ? [...prev, ...newSpawnedEntities] : prev;
       });
       spawnTimerRef.current = 0;
@@ -311,104 +280,56 @@ const App: React.FC = () => {
 
       prevEntities.forEach(entity => {
         let processedEntity = { ...entity };
-
         if (entity.type === EntityType.THIEF) {
              processedEntity = updateThiefLogic(processedEntity, currentPlayer, deltaTime);
         } else {
              const moveSpeed = (currentBaseSpeed * 0.8 * deltaTime) / 16; 
              processedEntity.y += moveSpeed;
         }
-
         if (checkCollision(currentPlayer, processedEntity)) {
            collisionDetected = true;
            collisionEntity = processedEntity;
         }
-
         const isOffBottom = processedEntity.y > 120;
         const isWayOffSide = processedEntity.lane < -2 || processedEntity.lane > 7;
-        
-        if (!isOffBottom && !isWayOffSide) {
-          nextEntities.push(processedEntity);
-        }
+        if (!isOffBottom && !isWayOffSide) nextEntities.push(processedEntity);
       });
 
       if (collisionDetected && collisionEntity) {
         const entity = collisionEntity;
-        
         if (entity.type === EntityType.COIN) {
-            setPlayer(p => {
-                const np = { ...p, phoneCount: p.phoneCount + 1 };
-                playerRef.current = np;
-                return np;
-            });
+            setPlayer(p => { const np = { ...p, phoneCount: p.phoneCount + 1 }; playerRef.current = np; return np; });
             return nextEntities.filter(e => e.id !== entity.id);
         }
-
         if (entity.type === EntityType.SHIELD) {
-            setPlayer(p => {
-                const np = { ...p, hasShield: true };
-                playerRef.current = np;
-                return np;
-            });
+            setPlayer(p => { const np = { ...p, hasShield: true }; playerRef.current = np; return np; });
             return nextEntities.filter(e => e.id !== entity.id);
         }
-
-        if (entity.type === EntityType.SLOW_MO) {
-            return nextEntities.filter(e => e.id !== entity.id);
-        }
+        if (entity.type === EntityType.SLOW_MO) return nextEntities.filter(e => e.id !== entity.id);
 
         if (currentPlayer.hasShield) {
-            setPlayer(p => {
-                const np = { ...p, hasShield: false, isInvulnerable: true };
-                playerRef.current = np;
-                return np;
-            });
-            setTimeout(() => {
-                setPlayer(p => {
-                    const np = {...p, isInvulnerable: false};
-                    playerRef.current = np;
-                    return np;
-                });
-            }, 1000);
-            
-            if (entity.type === EntityType.THIEF || entity.type === EntityType.CAR || entity.type === EntityType.BUS) {
-                 return nextEntities.filter(e => e.id !== entity.id);
-            }
+            setPlayer(p => { const np = { ...p, hasShield: false, isInvulnerable: true }; playerRef.current = np; return np; });
+            setTimeout(() => { setPlayer(p => { const np = {...p, isInvulnerable: false}; playerRef.current = np; return np; }); }, 1000);
+            if (entity.type === EntityType.THIEF || entity.type === EntityType.CAR || entity.type === EntityType.BUS) return nextEntities.filter(e => e.id !== entity.id);
         } else if (!currentPlayer.isInvulnerable) {
-             
              if (entity.type === EntityType.THIEF) {
                 if (currentPlayer.phoneCount > 1) {
-                     setPlayer(p => {
-                        const np = { ...p, phoneCount: p.phoneCount - 1, isInvulnerable: true };
-                        playerRef.current = np;
-                        return np;
-                    });
-                    setTimeout(() => {
-                        setPlayer(p => {
-                            const np = {...p, isInvulnerable: false};
-                            playerRef.current = np;
-                            return np;
-                        });
-                    }, 1000);
-                    return nextEntities.filter(e => e.id !== entity.id);
+                     setPlayer(p => { const np = { ...p, phoneCount: p.phoneCount - 1, isInvulnerable: true }; playerRef.current = np; return np; });
+                     setTimeout(() => { setPlayer(p => { const np = {...p, isInvulnerable: false}; playerRef.current = np; return np; }); }, 1000);
+                     return nextEntities.filter(e => e.id !== entity.id);
                 } else {
-                    setPlayer(p => {
-                        const np = { ...p, phoneCount: 0 };
-                        playerRef.current = np;
-                        return np;
-                    });
-                    setDeathReason("汪汪唯一的手机被小偷偷走啦！没法打卡，痛失手机！");
+                    setPlayer(p => { const np = { ...p, phoneCount: 0 }; playerRef.current = np; return np; });
+                    setDeathReason('fail_stolen'); // Use Key
                     setStatus(GameStatus.GAME_OVER);
                     statusRef.current = GameStatus.GAME_OVER;
                 }
              } else {
-                setDeathReason("汪汪处理车祸耽误了上班，这下全勤奖泡汤了。");
+                setDeathReason('fail_crash'); // Use Key
                 setStatus(GameStatus.GAME_OVER);
                 statusRef.current = GameStatus.GAME_OVER;
              }
         }
       }
-
       return nextEntities;
     });
 
@@ -428,59 +349,35 @@ const App: React.FC = () => {
     
     let startingSeason = SEASONS_ORDER[Math.floor(Math.random() * 4)];
     if (level.isEndless) startingSeason = Season.SPRING;
-    
     setCurrentSeason(startingSeason);
     currentSeasonRef.current = startingSeason;
     
-    setScore(0);
-    setDistance(0);
-    distanceRef.current = 0;
-    thievesSpawnedRef.current = 0; 
-    setSurvivalTime(0);
-    
+    setScore(0); setDistance(0); distanceRef.current = 0; thievesSpawnedRef.current = 0; setSurvivalTime(0);
     const minStr = level.startMinute < 10 ? `0${level.startMinute}` : `${level.startMinute}`;
     setGameTimeStr(`0${level.startHour}:${minStr}`);
-    
     setEntities([]);
-    
-    const initialPlayer = {
-        lane: 2, 
-        y: GAME_CONFIG.PLAYER_MAX_Y - 10,
-        hasShield: false,
-        speedMultiplier: 1,
-        isInvulnerable: false,
-        phoneCount: 1, 
-    };
+    const initialPlayer = { lane: 2, y: GAME_CONFIG.PLAYER_MAX_Y - 10, hasShield: false, speedMultiplier: 1, isInvulnerable: false, phoneCount: 1 };
     setPlayer(initialPlayer);
     playerRef.current = initialPlayer;
     setIsTouchMode(false); 
-    
     setDeathReason('');
     
     setStatus(GameStatus.STORY_INTRO);
     statusRef.current = GameStatus.STORY_INTRO;
     setCountdown(3); 
-    
     totalPausedTimeRef.current = 0;
   };
 
   const restartLevel = () => {
-      if (currentLevel) {
-          startGame(currentLevel);
-      } else {
-          returnToMenu();
-      }
+      if (currentLevel) startGame(currentLevel);
+      else returnToMenu();
   };
 
   const nextLevel = () => {
       if (!currentLevel) return;
-      
       const idx = LEVELS.findIndex(l => l.id === currentLevel.id);
-      if (idx >= 0 && idx < LEVELS.length - 1) {
-          startGame(LEVELS[idx + 1]);
-      } else {
-          startGame(ENDLESS_LEVEL);
-      }
+      if (idx >= 0 && idx < LEVELS.length - 1) startGame(LEVELS[idx + 1]);
+      else startGame(ENDLESS_LEVEL);
   };
 
   const returnToMenu = () => {
@@ -489,7 +386,6 @@ const App: React.FC = () => {
       setCurrentLevel(null); 
   };
 
-  // Dynamic background styles based on season for the desktop padding area
   const getBgStyle = () => {
       const s = currentSeason;
       if (s === Season.SPRING) return 'from-pink-100 via-white to-emerald-100';
@@ -500,10 +396,7 @@ const App: React.FC = () => {
   };
 
   return (
-    // Outer container now has a pleasant gradient background instead of dark gray
     <div className={`relative w-full h-screen bg-gradient-to-br ${getBgStyle()} flex justify-center items-center overflow-hidden transition-colors duration-1000`}>
-      
-      {/* Optional: Desktop background decor (blurred) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block opacity-50 blur-3xl">
           <div className="absolute top-10 left-10 w-96 h-96 bg-white/40 rounded-full animate-pulse"></div>
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-white/40 rounded-full animate-pulse delay-1000"></div>
@@ -511,11 +404,9 @@ const App: React.FC = () => {
 
       <div 
         ref={containerRef}
-        // KEY FIX: Use aspect-ratio for desktop, full w/h for mobile
         className="relative w-full h-full md:w-[450px] md:h-auto md:aspect-[9/19.5] md:max-h-[90vh] md:rounded-3xl md:border-[8px] md:border-white/50 md:ring-4 md:ring-black/5 bg-slate-200 shadow-2xl overflow-hidden touch-none z-10"
       >
-        {/* Story Scene Layer (Only visible during STORY_INTRO) */}
-        {status === GameStatus.STORY_INTRO && <StoryScene countdown={countdown} />}
+        {status === GameStatus.STORY_INTRO && <StoryScene countdown={countdown} language={language} />}
 
         <Road 
             speed={player.speedMultiplier * (currentLevel ? (currentLevel.baseSpeed / 1.5) : 1)} 
@@ -542,6 +433,8 @@ const App: React.FC = () => {
             onNextLevel={nextLevel}
             onPause={pauseGame}
             onResume={resumeGame}
+            onToggleLanguage={toggleLanguage}
+            language={language}
             causeOfDeath={deathReason}
             gameTimeStr={gameTimeStr}
             phoneCount={player.phoneCount}
@@ -553,7 +446,7 @@ const App: React.FC = () => {
 
         {status === GameStatus.START && (
             <div className="absolute bottom-4 w-full text-center text-slate-400 text-[10px] font-medium px-4 opacity-50 pointer-events-none">
-               Ver 10.1.0 Desktop Aspect
+               Ver 11.0.0 Bilingual
             </div>
         )}
       </div>
