@@ -1,6 +1,6 @@
 export enum GameStatus {
   START = 'START',
-  STORY_INTRO = 'STORY_INTRO', // New status for plot countdown
+  STORY_INTRO = 'STORY_INTRO',
   PLAYING = 'PLAYING',
   PAUSED = 'PAUSED',
   GAME_OVER = 'GAME_OVER',
@@ -8,12 +8,12 @@ export enum GameStatus {
 }
 
 export enum EntityType {
-  CAR = 'CAR', // Normal traffic
-  BUS = 'BUS', // Large traffic
-  THIEF = 'THIEF', // Enemy targeting player
-  COIN = 'COIN', // Score bonus (Now represents EXTRA PHONE)
-  SHIELD = 'SHIELD', // Invulnerability
-  SLOW_MO = 'SLOW_MO', // Slows time
+  CAR = 'CAR', 
+  BUS = 'BUS', 
+  THIEF = 'THIEF', 
+  COIN = 'COIN', 
+  SHIELD = 'SHIELD', 
+  SLOW_MO = 'SLOW_MO', 
 }
 
 export enum Lane {
@@ -31,26 +31,28 @@ export enum Season {
   WINTER = 'WINTER',
 }
 
+export type Language = 'zh' | 'en';
+
 export interface Entity {
   id: number;
   type: EntityType;
-  lane: number; // 0 to 4
-  y: number; // % of screen height (0 is top, 100 is bottom)
-  speed: number; // relative speed
-  width: number; // relative width
-  height: number; // relative height
+  lane: number; 
+  y: number; 
+  speed: number; 
+  width: number; 
+  height: number; 
   color?: string;
-  isTargeting?: boolean; // For thieves: true = hunting, false = fleeing
-  directionX?: number; // 1 = Right, -1 = Left
+  isTargeting?: boolean; 
+  directionX?: number; 
 }
 
 export interface PlayerState {
   lane: number;
-  y: number; // fixed mostly, but can shimmy
+  y: number; 
   hasShield: boolean;
   speedMultiplier: number;
   isInvulnerable: boolean;
-  phoneCount: number; // New: Track number of phones
+  phoneCount: number; 
 }
 
 export interface GameConfig {
@@ -60,24 +62,23 @@ export interface GameConfig {
 
 export interface LevelConfig {
   id: string;
-  name: string;
-  description: string;
-  baseSpeed: number;        // Meters per second
-  spawnRateMs: number;      // Lower is harder
-  minThieves: number;       // Guarantee count
-  thiefChance: number;      // Random probability
-  blockadeChance: number;   // Traffic jam probability
+  // Name and Desc will be looked up via translation key based on ID
+  baseSpeed: number;        
+  spawnRateMs: number;      
+  minThieves: number;       
+  thiefChance: number;      
+  blockadeChance: number;   
   startHour: number;
   startMinute: number;
-  winDistance: number; // For endless, this is ignored or set very high
-  colorTheme: string;       // For UI styling
-  isEndless?: boolean;      // Flag for endless mode
+  winDistance: number; 
+  colorTheme: string;       
+  isEndless?: boolean;      
 }
 
 export interface Rank {
     minTime: number;
-    title: string;
-    message: string;
+    titleKey: string; // Changed from literal title to translation key
+    messageKey: string; // Changed from literal message to translation key
 }
 
 export interface SeasonStyle {
