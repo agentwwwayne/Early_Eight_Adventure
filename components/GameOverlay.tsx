@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { GameStatus, LevelConfig, Season, Rank } from '../types';
-import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun, ThumbsUp, Crown, Timer, CloudRain, Flame, Coffee, ThumbsDown, Share2, Download, Sparkles } from 'lucide-react';
+import { Trophy, AlertTriangle, Play, RotateCcw, Clock, Smartphone, Bike, Star, Zap, BookOpen, X, Home, RefreshCw, Infinity, Award, ArrowRight, Pause, Flower, Leaf, Snowflake, Sun, ThumbsUp, Crown, Timer, CloudRain, Flame, Coffee, ThumbsDown, Share2, Download, Sparkles, Target } from 'lucide-react';
 import { GAME_CONFIG, LEVELS, ENDLESS_LEVEL, RANKS, SEASON_STYLES } from '../constants';
 
 // Declare html2canvas globally as it is loaded via script tag
@@ -142,38 +142,43 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
       return { current: currentRank, next: nextRank };
   };
 
-  // --- VISUAL THEMES FOR RESULT SCREENS (BOTH ENDLESS & NORMAL) ---
-  // This function now handles ALL particle effects for the result screen
+  // --- VISUAL THEMES FOR RESULT SCREENS ---
   const renderResultParticles = (type: 'win' | 'fail' | 'rank_high' | 'rank_low') => {
       if (type === 'fail' || type === 'rank_low') {
-           // Rain / Gloomy Particles
+           // Rain / Gloomy Particles - Using inline styles for guaranteed rendering
            return (
-             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+             <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
                  <div className="absolute inset-0 bg-slate-900/10 mix-blend-multiply"></div>
                  {[...Array(30)].map((_,i) => (
-                     <div key={i} className="absolute top-[-20%] w-0.5 h-6 bg-blue-400/40 rounded-full" 
+                     <div key={i} className="absolute top-[-20%] w-0.5 h-6 bg-blue-500/60 rounded-full" 
                           style={{ 
                               left: `${Math.random()*100}%`, 
                               animation: `rain 0.8s linear infinite`, 
-                              animationDelay: `${Math.random()}s`
+                              animationDelay: `${Math.random()}s`,
                           }}></div>
                  ))}
+                 <style>{`
+                    @keyframes rain { 0% { transform: translateY(-20px); } 100% { transform: translateY(100vh); } }
+                 `}</style>
              </div>
            );
       } else {
            // Confetti / Celebration Particles
            return (
-             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                 {[...Array(40)].map((_,i) => (
+             <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+                 {[...Array(50)].map((_,i) => (
                      <div key={i} className={`absolute top-[-10%] w-2 h-4 ${['bg-yellow-400','bg-rose-400','bg-emerald-400','bg-purple-400'][i%4]} rotate-45`} 
                           style={{ 
                               left: `${Math.random()*100}%`, 
                               animation: `confetti ${2+Math.random()*2}s linear infinite`,
                               animationDelay: `${Math.random()*2}s`,
-                              opacity: 0.8
+                              opacity: 0.9
                           }}></div>
                  ))}
                  <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent"></div>
+                 <style>{`
+                    @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(100vh) rotate(720deg); } }
+                 `}</style>
              </div>
            );
       }
@@ -321,7 +326,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
               }
           }
           setIsGeneratingShare(false);
-      }, 100);
+      }, 200);
   };
 
 
@@ -416,7 +421,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     // ... (Same as before)
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-pink-100 to-white z-50 flex flex-col items-center justify-start text-slate-800 px-4 py-8 overflow-y-auto no-scrollbar overflow-x-hidden">
-        {/* ... Decor ... */}
+        {/* Decor */}
         <div className="absolute top-[-10%] left-[-20%] w-64 h-64 bg-white/50 rounded-full blur-3xl animate-[pulse_4s_ease-in-out_infinite] pointer-events-none"></div>
         <div className="absolute top-[15%] right-[-10%] w-40 h-40 bg-yellow-200/40 rounded-full blur-2xl animate-[bounce_5s_infinite] delay-700 pointer-events-none"></div>
         <div className="absolute bottom-[15%] left-[5%] w-32 h-32 bg-pink-300/30 rounded-full blur-xl animate-[pulse_3s_ease-in-out_infinite] pointer-events-none"></div>
@@ -530,6 +535,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     const isStolen = causeOfDeath?.includes("偷") || causeOfDeath?.includes("抢");
     const isCrash = causeOfDeath?.includes("车") || causeOfDeath?.includes("撞");
 
+    // --- THEME DETERMINATION ---
     if (isWin) {
       title = "打卡成功！";
       bgTheme = "bg-gradient-to-br from-emerald-100 via-yellow-100 to-orange-100"; 
@@ -573,6 +579,7 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         );
         
     } else {
+        // Normal Fail
         description = failMessage; 
         particleType = 'fail';
         if (isStolen) {
@@ -624,85 +631,70 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     const rankColorClass = isEndless ? getEndlessTheme(survivalTime).textColor : 'text-purple-600';
 
     // --- RENDER SHARE CARD (HIDDEN) ---
-    // Completely redesigned for high aesthetic appeal
+    // Optimized layout for screenshot
     const ShareCard = () => (
-        <div id="share-card" className="absolute top-[-9999px] left-[-9999px] w-[600px] h-[900px] flex flex-col overflow-hidden bg-white">
+        <div id="share-card" className="absolute top-[-9999px] left-[-9999px] w-[500px] h-[900px] flex flex-col items-center p-0 overflow-hidden bg-white font-sans">
              
-             {/* Top 2/3: Visual Area with Gradient */}
-             <div className={`w-full h-[65%] relative ${bgTheme.replace('bg-gradient-to-br', 'bg-gradient-to-b')} flex flex-col items-center justify-center p-8`}>
-                 {/* Background Decor */}
-                 <div className="absolute top-0 left-0 w-full h-full opacity-30 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-                 <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-white/20 rounded-full blur-3xl"></div>
-                 <div className="absolute bottom-[-10%] left-[-10%] w-80 h-80 bg-white/20 rounded-full blur-3xl"></div>
+             {/* Header Section (60%) */}
+             <div className={`w-full h-[60%] relative flex flex-col items-center justify-center p-10 text-center ${bgTheme.replace('bg-gradient-to-br', 'bg-gradient-to-b')}`}>
+                 {/* Decor */}
+                 <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[radial-gradient(circle,rgba(255,255,255,0.8)_2px,transparent_2px)] bg-[length:20px_20px]"></div>
                  
-                 {/* Floating Particles on Card */}
-                 <div className="absolute inset-0 opacity-60">
-                     {[...Array(15)].map((_,i) => (
-                         <div key={i} className="absolute bg-white/40 rounded-full" style={{ top: `${Math.random()*100}%`, left: `${Math.random()*100}%`, width: `${4+Math.random()*8}px`, height: `${4+Math.random()*8}px` }}></div>
-                     ))}
-                 </div>
-
-                 {/* Main Icon Container */}
                  <div className={`relative z-10 p-10 rounded-full ${iconBg} text-white shadow-2xl mb-6 border-8 border-white/30`}>
-                     <MainIcon size={100} strokeWidth={1.5} />
+                     <MainIcon size={96} strokeWidth={2} />
                  </div>
 
-                 {/* Title */}
-                 <div className={`relative z-10 text-6xl font-black text-white tracking-tight drop-shadow-md mb-2`}>
+                 <div className={`relative z-10 text-5xl font-black text-white tracking-tight drop-shadow-md mb-2 leading-tight`}>
                      {title}
                  </div>
                  
-                 {/* Rank Title (Endless Only) */}
                  {isEndless && currentRankData && (
-                     <div className="relative z-10 bg-white/20 backdrop-blur-md px-8 py-2 rounded-full border border-white/40 mt-2">
-                         <div className="text-3xl font-bold text-white drop-shadow-sm tracking-widest uppercase">
+                     <div className="relative z-10 bg-white/20 backdrop-blur-md px-8 py-2 rounded-full border border-white/40 mt-4">
+                         <div className="text-2xl font-bold text-white tracking-widest uppercase shadow-sm">
                              {currentRankData.title}
                          </div>
                      </div>
                  )}
              </div>
 
-             {/* Bottom 1/3: Info & QR */}
-             <div className="w-full h-[35%] bg-white flex flex-col p-8 relative">
-                 {/* Zigzag tear effect separator */}
-                 <div className="absolute top-[-10px] left-0 w-full h-4 bg-white" style={{ clipPath: 'polygon(0 100%, 2% 0, 4% 100%, 6% 0, 8% 100%, 10% 0, 12% 100%, 14% 0, 16% 100%, 18% 0, 20% 100%, 22% 0, 24% 100%, 26% 0, 28% 100%, 30% 0, 32% 100%, 34% 0, 36% 100%, 38% 0, 40% 100%, 42% 0, 44% 100%, 46% 0, 48% 100%, 50% 0, 52% 100%, 54% 0, 56% 100%, 58% 0, 60% 100%, 62% 0, 64% 100%, 66% 0, 68% 100%, 70% 0, 72% 100%, 74% 0, 76% 100%, 78% 0, 80% 100%, 82% 0, 84% 100%, 86% 0, 88% 100%, 90% 0, 92% 100%, 94% 0, 96% 100%, 98% 0, 100% 100%)' }}></div>
+             {/* Info Section (40%) */}
+             <div className="w-full h-[40%] bg-white flex flex-col p-8 relative">
+                 {/* Connector Spikes */}
+                 <div className="absolute top-[-10px] left-0 w-full h-4 bg-white" style={{ clipPath: 'polygon(0 100%, 5% 0, 10% 100%, 15% 0, 20% 100%, 25% 0, 30% 100%, 35% 0, 40% 100%, 45% 0, 50% 100%, 55% 0, 60% 100%, 65% 0, 70% 100%, 75% 0, 80% 100%, 85% 0, 90% 100%, 95% 0, 100% 100%)' }}></div>
 
-                 <div className="flex-1 flex items-center justify-between gap-8">
-                     {/* Stats */}
-                     <div className="flex-1">
-                         <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">
-                             {isEndless ? "SURVIVAL TIME" : "TIME RECORD"}
+                 <div className="flex-1 flex flex-col justify-center gap-6">
+                     <div className="flex justify-between items-center border-b-2 border-dashed border-slate-100 pb-6">
+                         <div className="text-left">
+                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                 {isEndless ? "SURVIVAL TIME" : "COMPLETION TIME"}
+                             </div>
+                             <div className="text-6xl font-black text-slate-800 leading-none tracking-tighter">
+                                 {isEndless ? formatDuration(survivalTime) : gameTimeStr}
+                             </div>
                          </div>
-                         <div className="text-6xl font-black text-slate-800 mb-4 leading-none">
-                             {isEndless ? formatDuration(survivalTime) : gameTimeStr}
-                         </div>
-                         
-                         <div className="flex items-center gap-2 text-slate-500 font-bold bg-slate-100 px-4 py-2 rounded-xl w-fit">
-                             <Smartphone size={20} className="text-emerald-500" />
-                             <span>Collected: {phoneCount}</span>
+                         <div className="text-right">
+                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">PHONES</div>
+                             <div className="text-4xl font-black text-slate-800 leading-none flex items-center justify-end gap-2">
+                                 {phoneCount} <Smartphone size={28} className="text-slate-300" />
+                             </div>
                          </div>
                      </div>
 
-                     {/* QR Code Area */}
-                     <div className="flex flex-col items-center gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                         <div className="w-24 h-24 bg-white p-1 rounded-lg shadow-sm">
+                     {/* QR Code Footer */}
+                     <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                         <div className="w-20 h-20 bg-white p-1 rounded-lg flex-shrink-0">
                             <img 
                                 src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://woof-woof-early-eight-adventure.vercel.app/" 
                                 alt="QR Code" 
-                                className="w-full h-full object-contain" 
+                                className="w-full h-full object-contain mix-blend-multiply" 
                                 crossOrigin="anonymous"
                             />
                          </div>
-                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scan to Play</div>
+                         <div className="text-left">
+                             <div className="text-xl font-black text-slate-800 leading-none mb-1">来挑战我！</div>
+                             <div className="text-xs text-slate-500 leading-tight">扫码立即开始早八大冒险<br/>看看你能坚持多久？</div>
+                         </div>
                      </div>
-                 </div>
-                 
-                 <div className="mt-4 flex justify-between items-end">
-                      <div className="flex items-center gap-2">
-                          <Bike size={20} className="text-slate-400"/>
-                          <span className="text-lg font-black text-slate-800 tracking-tight">早八大冒险</span>
-                      </div>
-                      <div className="text-xs font-mono text-slate-400">{new Date().toDateString()}</div>
                  </div>
              </div>
         </div>
@@ -728,82 +720,97 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
         )}
 
         {/* RENDER GLOBAL PARTICLES ON OVERLAY */}
-        {renderResultParticles(particleType)}
-
-        <div className="mb-6 relative z-10">
-             <div className={`p-6 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin || (isEndless && survivalTime > 75) ? 'animate-bounce' : 'animate-pulse'}`}>
-                <MainIcon size={64} className="text-white drop-shadow-md" />
-             </div>
-             {showEmote}
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+            {renderResultParticles(particleType)}
         </div>
         
-        <h2 className={`relative z-10 text-4xl font-black mb-3 drop-shadow-sm tracking-tight ${textColor}`}>
-          {title}
-        </h2>
-        
-        {isEndless && currentRankData && (
-            <div className="w-full max-w-xs mb-4 space-y-2 relative z-10 flex-shrink-0">
-                <div className={`${panelBg} px-6 py-3 rounded-2xl backdrop-blur-md shadow-sm flex flex-col items-center transition-all duration-500`}>
-                    <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest block mb-1">本次称号</span>
-                    <div className={`text-2xl font-black drop-shadow-sm ${rankColorClass}`}>
-                        {currentRankData.title}
+        {/* --- MAIN CONTENT --- */}
+        <div className="relative z-10 w-full max-w-xs flex flex-col items-center mt-auto mb-auto pt-4 pb-4">
+            
+             <div className="mb-4 relative flex-shrink-0">
+                <div className={`p-5 rounded-full ring-8 ring-white/50 shadow-xl ${iconBg} ${isWin || (isEndless && survivalTime > 75) ? 'animate-bounce' : 'animate-pulse'}`}>
+                    <MainIcon size={56} className="text-white drop-shadow-md" />
+                </div>
+                {showEmote}
+            </div>
+            
+            <h2 className={`relative z-10 text-3xl font-black mb-3 drop-shadow-sm tracking-tight ${textColor}`}>{title}</h2>
+            
+            {/* Layout Fix: Better spacing for Non-Endless results */}
+            {!isEndless && (
+                <div className="w-full flex flex-col gap-2 mb-6">
+                    <div className={`relative z-10 text-base ${subTextColor} font-medium px-2 leading-relaxed bg-white/40 p-3 rounded-xl border border-white/20 backdrop-blur-sm`}>
+                        {description}
                     </div>
                 </div>
-                
-                {rankInfo && rankInfo.next && (
-                    <div className="bg-white/40 p-3 rounded-xl border border-white/30 backdrop-blur-sm animate-in slide-in-from-bottom-2 delay-300">
-                        <div className="flex justify-between items-center text-[10px] font-medium opacity-80 mb-1">
-                            <span className="flex items-center gap-1"><Crown size={10}/> {rankInfo.current.title}</span>
-                            <span className="flex items-center gap-1 font-bold"><Crown size={10}/> {rankInfo.next.title}</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-gradient-to-r from-white/50 to-white transition-all duration-1000"
-                                style={{ width: `${((survivalTime - rankInfo.current.minTime) / (rankInfo.next.minTime - rankInfo.current.minTime)) * 100}%` }}
-                            ></div>
-                        </div>
-                        <div className="text-center text-[10px] opacity-70 mt-1 font-bold">
-                            再坚持 {Math.ceil(rankInfo.next.minTime - survivalTime)} 秒升级！加油！
+            )}
+            
+            {isEndless && currentRankData && (
+                <div className="w-full mb-4 space-y-2 relative z-10 flex-shrink-0">
+                    <div className={`${panelBg} px-6 py-3 rounded-2xl backdrop-blur-md shadow-sm flex flex-col items-center transition-all duration-500`}>
+                        <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest block mb-1">本次称号</span>
+                        <div className={`text-2xl font-black drop-shadow-sm ${rankColorClass}`}>
+                            {currentRankData.title}
                         </div>
                     </div>
-                )}
-            </div>
-        )}
-
-        <div className={`relative z-10 text-base ${subTextColor} mb-6 font-medium px-2 leading-relaxed max-w-xs`}>
-            {description}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 w-full mb-6 relative z-10 flex-shrink-0">
-            <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
-                <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">{isEndless ? '坚持时长' : '最终时间'}</div>
-                <div className="text-xl font-black">{isEndless ? formatDuration(survivalTime) : gameTimeStr}</div>
-            </div>
-            <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
-                <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">剩余手机</div>
-                <div className={`text-xl font-black ${phoneCount === 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{phoneCount}</div>
-            </div>
-        </div>
-
-        <div className="w-full space-y-3 relative z-10 flex-shrink-0">
-            {PrimaryAction}
+                    
+                    {rankInfo && rankInfo.next && (
+                        <div className="bg-white/40 p-3 rounded-xl border border-white/30 backdrop-blur-sm animate-in slide-in-from-bottom-2 delay-300">
+                            <div className="flex justify-between items-center text-[10px] font-medium opacity-80 mb-1">
+                                <span className="flex items-center gap-1"><Crown size={10}/> {rankInfo.current.title}</span>
+                                <span className="flex items-center gap-1 font-bold"><Crown size={10}/> {rankInfo.next.title}</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-white/50 to-white transition-all duration-1000"
+                                    style={{ width: `${((survivalTime - rankInfo.current.minTime) / (rankInfo.next.minTime - rankInfo.current.minTime)) * 100}%` }}
+                                ></div>
+                            </div>
+                            <div className="text-center text-[10px] opacity-70 mt-1 font-bold">
+                                再坚持 {Math.ceil(rankInfo.next.minTime - survivalTime)} 秒升级！加油！
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
             
-            <button 
-                onClick={handleShare}
-                disabled={isGeneratingShare}
-                className="w-full bg-white/80 hover:bg-white active:scale-95 text-slate-700 font-bold py-3 px-8 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
-            >
-                {isGeneratingShare ? <RefreshCw size={18} className="animate-spin"/> : <Share2 size={18} />}
-                {isGeneratingShare ? "生成中..." : "分享战绩"}
-            </button>
+            {isEndless && (
+                 <div className={`relative z-10 text-base ${subTextColor} mb-6 font-medium px-2 leading-relaxed`}>
+                    {description}
+                </div>
+            )}
 
-            <button 
-                onClick={onReturn}
-                className="w-full bg-white/40 hover:bg-white/60 active:bg-white/70 active:scale-95 text-slate-800 font-bold py-3 px-8 rounded-xl backdrop-blur-sm border border-white/50 transition-all flex items-center justify-center gap-2 shadow-sm"
-            >
-                <Home size={18} />
-                返回选关
-            </button>
+            <div className="grid grid-cols-2 gap-3 w-full mb-6 relative z-10 flex-shrink-0">
+                <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
+                    <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">{isEndless ? '坚持时长' : '最终时间'}</div>
+                    <div className="text-xl font-black">{isEndless ? formatDuration(survivalTime) : gameTimeStr}</div>
+                </div>
+                <div className={`${panelBg} p-3 rounded-2xl backdrop-blur-md shadow-sm`}>
+                    <div className="text-[10px] opacity-80 uppercase font-bold mb-0.5">剩余手机</div>
+                    <div className={`text-xl font-black ${phoneCount === 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{phoneCount}</div>
+                </div>
+            </div>
+
+            <div className="w-full space-y-3 relative z-10 flex-shrink-0">
+                {PrimaryAction}
+                
+                <button 
+                    onClick={handleShare}
+                    disabled={isGeneratingShare}
+                    className="w-full bg-white/80 hover:bg-white active:scale-95 text-slate-700 font-bold py-3 px-8 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+                >
+                    {isGeneratingShare ? <RefreshCw size={18} className="animate-spin"/> : <Share2 size={18} />}
+                    {isGeneratingShare ? "生成中..." : "分享战绩"}
+                </button>
+
+                <button 
+                    onClick={onReturn}
+                    className="w-full bg-white/40 hover:bg-white/60 active:bg-white/70 active:scale-95 text-slate-800 font-bold py-3 px-8 rounded-xl backdrop-blur-sm border border-white/50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                    <Home size={18} />
+                    返回选关
+                </button>
+            </div>
         </div>
       </div>
     );
