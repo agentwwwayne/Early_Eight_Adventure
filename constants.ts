@@ -1,4 +1,4 @@
-import { Lane, EntityType, LevelConfig, Rank, Season, SeasonStyle } from './types';
+import { Lane, EntityType, LevelConfig, Rank, Season, SeasonStyle, Language } from './types';
 
 export const GAME_CONFIG = {
   LANES: 5,
@@ -53,12 +53,11 @@ export const SEASON_STYLES: Record<Season, SeasonStyle> = {
     },
 };
 
-// --- Level Definitions ---
 export const LEVELS: LevelConfig[] = [
   {
     id: 'EASY',
-    name: '悠闲实习生',
-    description: '8:00 出发，路况良好，慢慢骑不着急。',
+    name: 'EASY', // Placeholder, used for ID lookup
+    description: '',
     baseSpeed: 1.3,
     spawnRateMs: 1000,
     minThieves: 2,
@@ -71,8 +70,8 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     id: 'NORMAL',
-    name: '资深打工人',
-    description: '8:10 出发，稍微有点晚，需要加速超车！',
+    name: 'NORMAL',
+    description: '',
     baseSpeed: 1.6,
     spawnRateMs: 800,
     minThieves: 3,
@@ -85,8 +84,8 @@ export const LEVELS: LevelConfig[] = [
   },
   {
     id: 'HARD',
-    name: '极限踩点王',
-    description: '8:20 出发！全速冲刺！小偷和堵车都别挡道！',
+    name: 'HARD',
+    description: '',
     baseSpeed: 1.9,
     spawnRateMs: 700,
     minThieves: 3,
@@ -101,8 +100,8 @@ export const LEVELS: LevelConfig[] = [
 
 export const ENDLESS_LEVEL: LevelConfig = {
     id: 'ENDLESS',
-    name: '无尽早高峰',
-    description: '没有尽头，看看你能坚持多久！',
+    name: 'ENDLESS',
+    description: '',
     baseSpeed: 1.6, 
     spawnRateMs: 800, 
     minThieves: 999, 
@@ -115,15 +114,14 @@ export const ENDLESS_LEVEL: LevelConfig = {
     isEndless: true,
 };
 
-// Adjusted Ranks: 150s is Top Tier
 export const RANKS: Rank[] = [
-    { minTime: 0, title: '早起困难户', message: '刚出门就倒下了...' },
-    { minTime: 20, title: '悠闲实习生', message: '虽然迟到了，但心态很好。' },
-    { minTime: 40, title: '资深打工人', message: '这种程度的早高峰已经是家常便饭。' },
-    { minTime: 60, title: '极限踩点王', message: '只要我骑得够快，迟到就追不上我！' },
-    { minTime: 90, title: '全勤奖猎人', message: '风里雨里，公司等你！' },
-    { minTime: 120, title: '秋名山车神', message: '连小偷都看不清你的车尾灯。' },
-    { minTime: 150, title: '时间管理大师', message: '你已经超越了时间的概念。' },
+    { minTime: 0, titleKey: 'rank_0_title', messageKey: 'rank_0_msg' },
+    { minTime: 20, titleKey: 'rank_1_title', messageKey: 'rank_1_msg' },
+    { minTime: 40, titleKey: 'rank_2_title', messageKey: 'rank_2_msg' },
+    { minTime: 60, titleKey: 'rank_3_title', messageKey: 'rank_3_msg' },
+    { minTime: 90, titleKey: 'rank_4_title', messageKey: 'rank_4_msg' },
+    { minTime: 120, titleKey: 'rank_5_title', messageKey: 'rank_5_msg' },
+    { minTime: 150, titleKey: 'rank_6_title', messageKey: 'rank_6_msg' },
 ];
 
 export const ENTITY_CONFIG: Record<EntityType, { width: number; height: number; speed: number; color: string; score: number }> = {
@@ -137,4 +135,159 @@ export const ENTITY_CONFIG: Record<EntityType, { width: number; height: number; 
 
 export const getLaneCenter = (lane: number): number => {
   return 10 + (lane * 20);
+};
+
+// --- Translations ---
+export const TRANSLATIONS: Record<Language, Record<string, string>> = {
+    zh: {
+        game_title: "早八大冒险",
+        goal_hint: "目标: 8:30 前打卡保住全勤奖",
+        thief_warning: "警报: 务必小心路上的偷手机贼！",
+        select_level: "选择今日通勤姿势",
+        depart: "出发",
+        collect_phone: "捡手机",
+        avoid_thief: "躲小偷",
+        get_bonus: "拿全勤",
+        challenge_limit: "挑战极限",
+        endless_desc: "难度随时间增加，测测你的极限！",
+        rules_title: "游戏规则",
+        rule_1_title: "按住滑动or键盘操控",
+        rule_1_desc: "手指滑动屏幕or键盘控制，控制主角左右变道或上下加速/减速。",
+        rule_2_title: "收集手机",
+        rule_2_desc: "路上会有散落的手机，收集它们！如果你没有手机，就无法打卡！",
+        rule_3_title: "躲避危险",
+        rule_3_desc: "不要撞车！撞车会迟到，游戏结束。小心小偷！他们会偷走你的一部手机。",
+        btn_start: "明白了，出发！",
+        paused: "暂停中",
+        paused_hint: "休息一下，马上出发",
+        btn_resume: "继续游戏",
+        btn_restart: "重新开始",
+        btn_quit: "退出本局",
+        win_title: "打卡成功！",
+        win_desc_1: "你不仅在8:30前赶到了公司，还顺手捡了 {n} 部手机，简直是打工人之神！",
+        win_desc_2: "你在8:30前安全抵达了公司，保住了这个月的全勤奖！",
+        fail_stolen: "手机被偷啦！",
+        fail_crash: "撞到车啦！",
+        endless_finish: "冲刺结束",
+        endless_success: "冲刺成功",
+        rank_current: "本次称号",
+        next_rank_gap: "再坚持 {n} 秒升级！加油！",
+        btn_next_level: "下一关",
+        btn_try_endless: "试试无尽模式",
+        btn_retry: "再来一次",
+        btn_return: "返回选关",
+        btn_share: "分享战绩",
+        btn_generating: "生成中...",
+        share_modal_hint: "长按图片保存分享",
+        scan_to_play: "扫码挑战",
+        share_stat_survival: "生存时间",
+        share_stat_time: "打卡时间",
+        share_stat_phones: "捡到 {n} 部手机",
+        
+        // Levels
+        level_EASY_name: "悠闲实习生",
+        level_EASY_desc: "8:00 出发，路况良好，慢慢骑不着急。",
+        level_NORMAL_name: "资深打工人",
+        level_NORMAL_desc: "8:10 出发，稍微有点晚，需要加速超车！",
+        level_HARD_name: "极限踩点王",
+        level_HARD_desc: "8:20 出发！全速冲刺！小偷和堵车都别挡道！",
+        level_ENDLESS_name: "无尽早高峰",
+        
+        // Ranks
+        rank_0_title: "早起困难户", rank_0_msg: "刚出门就倒下了...",
+        rank_1_title: "悠闲实习生", rank_1_msg: "虽然迟到了，但心态很好。",
+        rank_2_title: "资深打工人", rank_2_msg: "这种程度的早高峰已经是家常便饭。",
+        rank_3_title: "极限踩点王", rank_3_msg: "只要我骑得够快，迟到就追不上我！",
+        rank_4_title: "全勤奖猎人", rank_4_msg: "风里雨里，公司等你！",
+        rank_5_title: "秋名山车神", rank_5_msg: "连小偷都看不清你的车尾灯。",
+        rank_6_title: "时间管理大师", rank_6_msg: "你已经超越了时间的概念。",
+        
+        // Story
+        story_1: "美滋滋买杯奶茶...",
+        story_1_sub: "半糖去冰，快乐加倍",
+        story_2: "糟糕！一看时间...",
+        story_2_sub: "全勤奖危在旦夕！",
+        story_3: "要迟到了！",
+        story_3_sub: "冲啊！！！",
+        
+        endless_hint_bubble: "看看谁是时间管理大师！",
+        
+        fail_encouragement: "加油！",
+        
+    },
+    en: {
+        game_title: "Morning Rush",
+        goal_hint: "Goal: Clock in before 8:30!",
+        thief_warning: "Warning: Beware of phone thieves!",
+        select_level: "Select Difficulty",
+        depart: "Depart",
+        collect_phone: "Phones",
+        avoid_thief: "Thieves",
+        get_bonus: "Bonus",
+        challenge_limit: "Limit Challenge",
+        endless_desc: "No end, test your limits!",
+        rules_title: "How to Play",
+        rule_1_title: "Controls",
+        rule_1_desc: "Slide or use arrow keys to move. Dodge traffic and speed up!",
+        rule_2_title: "Collect Phones",
+        rule_2_desc: "Pick up phones on the road. You cannot clock in without a phone!",
+        rule_3_title: "Avoid Dangers",
+        rule_3_desc: "Don't crash! Watch out for thieves trying to steal your phone.",
+        btn_start: "Got it, Let's Go!",
+        paused: "Paused",
+        paused_hint: "Take a breath...",
+        btn_resume: "Resume",
+        btn_restart: "Restart",
+        btn_quit: "Quit",
+        win_title: "Clocked In!",
+        win_desc_1: "Arrived before 8:30 with {n} extra phones! Amazing!",
+        win_desc_2: "Safe arrival before 8:30. Attendance bonus secured!",
+        fail_stolen: "Phone Stolen!",
+        fail_crash: "Crashed!",
+        endless_finish: "Run Ended",
+        endless_success: "New Record",
+        rank_current: "Rank",
+        next_rank_gap: "{n}s to next rank! Go!",
+        btn_next_level: "Next Level",
+        btn_try_endless: "Try Endless",
+        btn_retry: "Retry",
+        btn_return: "Menu",
+        btn_share: "Share",
+        btn_generating: "Creating...",
+        share_modal_hint: "Long press to save image",
+        scan_to_play: "Scan to Play",
+        share_stat_survival: "SURVIVAL",
+        share_stat_time: "TIME",
+        share_stat_phones: "Collected {n} Phones",
+        
+        // Levels
+        level_EASY_name: "Intern",
+        level_EASY_desc: "8:00 AM. Light traffic. Easy ride.",
+        level_NORMAL_name: "Pro Worker",
+        level_NORMAL_desc: "8:10 AM. Running late, need speed!",
+        level_HARD_name: "Sprint King",
+        level_HARD_desc: "8:20 AM. Full speed! Dodge everything!",
+        level_ENDLESS_name: "Endless Rush",
+        
+        // Ranks
+        rank_0_title: "Sleepyhead", rank_0_msg: "Fell asleep at the door...",
+        rank_1_title: "Intern", rank_1_msg: "Late but happy.",
+        rank_2_title: "Pro Worker", rank_2_msg: "Just another morning commute.",
+        rank_3_title: "Sprinter", rank_3_msg: "Too fast for late!",
+        rank_4_title: "Bonus Hunter", rank_4_msg: "Rain or shine, I am there.",
+        rank_5_title: "Speed Demon", rank_5_msg: "Thieves can't catch you.",
+        rank_6_title: "Time Master", rank_6_msg: "You have transcended time.",
+        
+        // Story
+        story_1: "Buying Bubble Tea...",
+        story_1_sub: "Half sugar, less ice.",
+        story_2: "Oh no! The time...",
+        story_2_sub: "Attendance bonus at risk!",
+        story_3: "LATE!",
+        story_3_sub: "GO GO GO!!!",
+        
+        endless_hint_bubble: "Who is the Time Master?",
+        
+        fail_encouragement: "Keep it up!",
+    }
 };
